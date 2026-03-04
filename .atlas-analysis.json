@@ -1,0 +1,112 @@
+{
+  "projectType": "saas",
+  "projectName": "Vitu",
+  "projectDescription": "A Flutter wellness app for tracking nutrition, exercise, hydration, and sleep with AI-powered food analysis.",
+  "theme": "almond",
+  "primaryColor": "#8BC34A",
+  "lightColor": "#AED581",
+  "darkColor": "#689F38",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Get Started",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "introduction",
+              "features"
+            ]
+          },
+          {
+            "group": "Setup",
+            "pages": [
+              "installation",
+              "quickstart",
+              "configuration"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Features",
+        "groups": [
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/nutrition",
+              "features/exercise",
+              "features/hydration",
+              "features/sleep"
+            ]
+          },
+          {
+            "group": "User Management",
+            "pages": [
+              "features/authentication",
+              "features/settings"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Development",
+        "groups": [
+          {
+            "group": "Architecture",
+            "pages": [
+              "development/architecture",
+              "development/database",
+              "development/ai-integration"
+            ]
+          },
+          {
+            "group": "Extending",
+            "pages": [
+              "development/adding-features",
+              "development/data-models"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Resources",
+            "pages": [
+              "reference/code-structure",
+              "reference/dependencies",
+              "reference/troubleshooting"
+            ]
+          },
+          {
+            "group": "Best Practices",
+            "pages": [
+              "reference/security",
+              "reference/roadmap"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "AI-powered food analysis with Google Gemini",
+    "Automatic step counting with vehicle detection",
+    "Water intake tracking with weekly progress charts",
+    "Automatic sleep detection based on screen state",
+    "Local-first data storage with Hive",
+    "Customizable themes and settings",
+    "Multi-platform support (Android, iOS, Windows, Linux, macOS)"
+  ],
+  "publicApiSurface": [
+    "User authentication (login/register)",
+    "Food image analysis via Gemini AI",
+    "Step tracking with sensor integration",
+    "Hydration logging (+100ml, +250ml, +500ml)",
+    "Sleep detection and quality tracking",
+    "User settings (theme, colors, fonts, personal data)",
+    "Hive boxes: users, user_settings, daily_exercise, hydration_logs, daily_hydration_summary, daily_sleep"
+  ]
+}
