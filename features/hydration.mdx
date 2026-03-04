@@ -1,0 +1,240 @@
+---
+title: Hydration Tracking
+description: Log your water intake, meet your daily goal, and view weekly progress
+---
+
+## Overview
+
+Vitu's Hydration feature helps you stay properly hydrated by tracking your daily water consumption. The app calculates a personalized daily goal based on your weight, age, and gender, then displays your progress in a visual circular indicator and weekly chart.
+
+## How to Use
+
+<Steps>
+  <Step title="View Your Daily Goal">
+    When you open the Hydration screen, you'll see:
+    - A circular progress indicator showing current liters consumed vs. your goal
+    - Your personalized daily target (e.g., "de 2.5 L")
+    
+    The goal is calculated automatically as approximately **35 ml per kg of body weight**, with adjustments for age and gender.
+  </Step>
+
+  <Step title="Log Water Intake">
+    Tap one of the three quick-add buttons to log water:
+    - **+100 ml**: Small glass or cup
+    - **+250 ml**: Standard glass (most common)
+    - **+500 ml**: Large bottle or tumbler
+    
+    The progress circle updates immediately with a smooth animation.
+  </Step>
+
+  <Step title="Track Your Progress">
+    Watch your circular progress fill up throughout the day. When you reach 100% of your goal, the circle will be completely filled.
+    
+    Your total is displayed in liters (e.g., "1.5 L de 2.5 L").
+  </Step>
+
+  <Step title="Review Weekly Trends">
+    Scroll down to see the "Consumo semanal" (weekly consumption) chart, which shows your hydration percentage for the past 7 days.
+  </Step>
+</Steps>
+
+## What Data is Tracked
+
+### Daily Metrics
+
+- **Total ml consumed**: Sum of all water logged today
+- **Daily goal (meta)**: Your personalized target in milliliters (shown in liters on screen)
+- **Percentage progress**: (total_ml / goal_ml) × 100, capped at 100%
+
+Each time you tap a button (+100ml, +250ml, +500ml), the app:
+1. Adds the amount to today's total
+2. Saves a timestamped log entry
+3. Updates the daily summary in local storage
+4. Recalculates your percentage
+
+### Weekly History
+
+Vitu stores your hydration data for the **past 7 days**, showing percentage achieved each day in a line chart.
+
+<Info>
+  At the start of each new day (midnight), your consumption automatically resets to **0%**. Previous days' data is preserved in the weekly chart.
+</Info>
+
+## How Your Daily Goal is Calculated
+
+Vitu uses a smart formula to determine your ideal daily water intake:
+
+### Base Formula
+```
+Base Goal = Body Weight (kg) × 35 ml
+```
+
+### Age Adjustments
+- **Under 14 years old**: Goal reduced to 90% of base (children need less)
+- **65 years or older**: Goal reduced to 95% of base (elderly need slightly less)
+- **Ages 14-64**: Full base amount
+
+### Gender Adjustments
+- **Male (Masculino)**: +200 ml added to the goal
+- **Female (Femenino)**: No additional adjustment
+
+### Goal Limits
+The final goal is clamped between:
+- **Minimum**: 1,200 ml (1.2 L)
+- **Maximum**: 4,500 ml (4.5 L)
+
+<Tip>
+  Example: A 30-year-old male weighing 70 kg would have a goal of:
+  
+  (70 kg × 35 ml) + 200 ml = 2,650 ml ≈ **2.7 L per day**
+</Tip>
+
+## How Results Are Displayed
+
+### Circular Progress Indicator
+
+The main visual on the Hydration screen is a large animated circle showing:
+- **Current consumption** in liters (e.g., "1.2 L")
+- **Goal** in smaller text below (e.g., "de 2.5 L")
+- **Fill percentage** visually represented by the colored arc
+- Smooth animation when you add water
+
+The circle uses your app's theme color and fills clockwise as you drink more.
+
+### Quick-Add Buttons
+
+Three horizontal buttons below the circle:
+- Each shows a water drop icon
+- Labels: "+100 ml", "+250 ml", "+500 ml"
+- Styled as elevated buttons with rounded corners
+- Tap to instantly log that amount
+
+### Weekly Line Chart
+
+The "Consumo semanal" section displays:
+- **7-day trend line** showing percentage achieved each day
+- **X-axis labels**: L, M, X, J, V, S, D (Monday through Sunday)
+- **Y-axis labels**: 0%, 25%, 50%, 75%, 100%
+- **Blue line** (your theme color) with dots at each day
+- **Shaded area** under the line for visual emphasis
+
+<Note>
+  The chart shows **percentage** (not absolute liters) so you can compare days even if your goal changes (e.g., if you update your weight).
+</Note>
+
+### Goal Summary Card
+
+At the bottom, a card shows:
+- **Flag icon**: "Meta diaria: X.X L" (your daily target)
+- **Alarm icon**: "Recordatorio cada 2 h" with a "Configurar" button (placeholder for future reminder feature)
+
+## Tips for Best Results
+
+### Log Immediately After Drinking
+
+For the most accurate tracking:
+- Tap the appropriate button right after you finish a glass
+- If you drank from a bottle, estimate the closest amount (e.g., a typical water bottle is 500 ml)
+
+### Use Consistent Glassware
+
+Get to know your common containers:
+- Small coffee cup: ~100-150 ml
+- Standard drinking glass: ~200-250 ml
+- Large tumbler: ~400-500 ml
+- Sports bottle: ~500-750 ml
+
+<Tip>
+  If you drink a full 1-liter bottle, tap "+500 ml" twice to log 1,000 ml total.
+</Tip>
+
+### Check Your Progress Multiple Times
+
+Glance at the Hydration screen throughout the day to:
+- See if you're on track (aim for ~30-40% by lunch, ~70% by dinner)
+- Remind yourself to drink more if the circle is too low
+- Celebrate when you reach 100%!
+
+### Adjust for Exercise or Heat
+
+Your base goal is a starting point. Drink more if:
+- You exercised heavily (see your [Exercise](/features/exercise) step count)
+- It's very hot outside
+- You're feeling thirsty or dehydrated
+
+You can exceed 100% safely—the app will continue tracking.
+
+### Update Your Weight
+
+If your weight changes significantly:
+1. Go to **Ajustes** (Settings)
+2. Update your peso (weight)
+3. Return to Hydration to see your recalculated goal
+
+<Warning>
+  Changing your weight will update your goal going forward, but **past days' data** remains calculated with the old goal.
+</Warning>
+
+## Understanding the Weekly Chart
+
+### Reading the Trend
+
+- **Flat line near 100%**: Excellent! You're consistently meeting your goal
+- **Line hovering around 50-70%**: Room for improvement; try to drink more
+- **Peaks and valleys**: Inconsistent hydration; aim for steadier daily intake
+- **Line below 25%**: You're significantly under-hydrated most days
+
+### Why Percentage (Not Liters)?
+
+The chart shows percentage because:
+- It's easier to compare days ("Did I meet my goal?")
+- Your goal might change if you update your profile
+- 100% is always your target, regardless of the absolute amount
+
+### Day Labels
+
+The 7-day chart always shows:
+- **Today** as the rightmost point (Sunday if today is Sunday)
+- **6 days ago** as the leftmost point
+- Days of the week: L (Lunes), M (Martes), X (Miércoles), J (Jueves), V (Viernes), S (Sábado), D (Domingo)
+
+## Troubleshooting
+
+### Progress Circle Not Updating
+
+If tapping buttons doesn't update the circle:
+- Check that you're logged in (ensure user data is loaded)
+- Close and reopen the Hydration screen
+- Verify the app has storage permissions
+
+### Weekly Chart Shows All Zeros
+
+This happens if:
+- You just started using the app (no historical data yet)
+- App data was recently cleared
+- You logged in with a different account
+
+Just start logging water—data will populate over the coming days.
+
+### Goal Seems Too High or Too Low
+
+Double-check your profile data:
+1. Go to **Ajustes** > **Datos Personales**
+2. Verify your:
+   - **Peso** (weight in kg)
+   - **Edad** (age)
+   - **Género** (gender)
+3. Update if needed, then return to Hydration
+
+If the calculated goal still seems off, remember:
+- Goals are **personalized estimates**, not medical advice
+- Adjust your intake based on how you feel
+- Consult a doctor if you have specific hydration needs
+
+### Reminder Not Working
+
+The "Recordatorio cada 2 h" feature is a **placeholder** in the current version. Future updates may add push notifications to remind you to drink water.
+
+---
+
+**Next Steps**: Stay healthy by also tracking your [sleep](/features/sleep) and [exercise](/features/exercise)!

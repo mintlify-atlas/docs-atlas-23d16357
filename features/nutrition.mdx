@@ -1,0 +1,158 @@
+---
+title: Nutrition Tracking
+description: Track your meals with AI-powered food analysis and get personalized recipe recommendations
+---
+
+## Overview
+
+Vitu's Nutrition feature uses Google Gemini AI to analyze photos of your food and provide detailed nutritional breakdowns. Simply snap a picture of your meal, and the app instantly identifies what you're eating and estimates calories, proteins, carbohydrates, and fats.
+
+## How to Use
+
+<Steps>
+  <Step title="Take a Photo">
+    Tap the **"Tomar Foto"** button on the Nutrition screen. You'll see two options:
+    - **Cámara**: Take a new photo with your device camera
+    - **Galería**: Choose an existing photo from your gallery
+  </Step>
+
+  <Step title="Wait for Analysis">
+    The app sends your photo to Gemini AI for analysis. You'll see a loading indicator with the message "Analizando imagen con IA..."
+    
+    This typically takes 5-20 seconds depending on your internet connection.
+  </Step>
+
+  <Step title="View Results">
+    Once analyzed, the app displays:
+    - The detected dish name
+    - Total calories (kcal)
+    - Protein content (grams)
+    - Carbohydrate content (grams)
+    - Fat content (grams)
+    - A visual pie chart showing macronutrient distribution
+  </Step>
+</Steps>
+
+## What Data is Tracked
+
+For each meal photo you analyze, Vitu captures:
+
+- **Dish Identification**: Approximate name of the food detected
+- **Calories**: Total energy content in kilocalories (kcal)
+- **Macronutrients**: 
+  - Proteins (shown in green on the chart)
+  - Carbohydrates (shown in amber on the chart)
+  - Fats (shown in red on the chart)
+
+<Info>
+  The AI analysis is personalized based on your profile data (age, weight, height, gender) to provide more accurate nutritional recommendations.
+</Info>
+
+## How Results Are Displayed
+
+### Nutritional Breakdown Cards
+
+After analysis, you'll see four color-coded chips showing:
+- **Calorías**: Total energy with a fire icon
+- **Proteínas**: Protein grams with a green leaf icon
+- **Carbs**: Carbohydrate grams with an amber grain icon
+- **Grasas**: Fat grams with a red water drop icon
+
+### Interactive Pie Chart
+
+Below the breakdown, a dynamic **PieChart** visualizes your macronutrient distribution:
+- **Green section**: Proteins percentage
+- **Amber section**: Carbohydrates percentage
+- **Red section**: Fats percentage
+
+The chart animates when new data loads, making it easy to see the balance of your meal at a glance.
+
+### Photo History
+
+The app saves your recent food photos (up to 8 shown) in a grid below the camera button. Tap any saved photo to re-analyze it without taking a new picture.
+
+## Recipe Recommendations
+
+Vitu automatically generates **3 personalized healthy recipes** when you open the Nutrition screen. These recommendations:
+
+- Are tailored to your age, gender, weight, and height
+- Include typical ingredients available in El Salvador
+- Show preparation time and difficulty level
+- Display an estimated nutritional breakdown
+
+### Viewing Recipe Details
+
+For each recommended recipe, you can:
+
+1. **View Ingredients**: Tap "Ingredientes" to see the full list of required items
+2. **See Cooking Steps**: Tap "Pasos" to get AI-generated, step-by-step instructions personalized for your profile
+3. **Check Nutrition**: Tap "Estimado Nutricional" to view calories, proteins, carbs, and fats for the entire recipe
+
+<Tip>
+  Recipe recommendations are generated fresh each time you open the Nutrition screen, so you'll always get variety!
+</Tip>
+
+## Tips for Best Results
+
+<Note>
+  **Internet Connection Required**: Food analysis and recipe generation require an active internet connection to communicate with Google Gemini AI.
+</Note>
+
+### Photography Tips
+
+- **Good Lighting**: Take photos in well-lit environments for better food recognition
+- **Full View**: Capture the entire dish in frame, not just a portion
+- **Clear Focus**: Make sure the image isn't blurry
+- **Single Dish**: For best results, photograph one dish at a time
+
+### Accuracy Considerations
+
+<Warning>
+  Nutritional values are **estimates** based on AI visual analysis. They may not be 100% accurate, especially for:
+  - Mixed dishes with many ingredients
+  - Sauces and dressings (which may be hidden)
+  - Portion sizes that differ significantly from standard servings
+</Warning>
+
+### Retry on Errors
+
+If analysis fails:
+- Check your internet connection
+- Ensure the photo clearly shows food (not just table or background)
+- Tap the **"Reintentar"** button if you see an error message
+- Try taking a new photo with better lighting or framing
+
+## Understanding Your Data
+
+### Macronutrient Balance
+
+The pie chart helps you visualize if your meal is balanced:
+- **High protein** (green dominates): Good for muscle building and satiety
+- **High carbs** (amber dominates): Provides quick energy
+- **High fat** (red dominates): Calorie-dense; useful for sustained energy
+
+A balanced meal typically shows all three sections with reasonable proportions.
+
+### Daily Context
+
+<Tip>
+  While Vitu doesn't automatically sum your daily nutrition, you can manually review your photo history throughout the day to track what you've eaten.
+</Tip>
+
+## Troubleshooting
+
+### "No se seleccionó imagen"
+This means no photo was chosen. Try again and select a photo from the camera or gallery.
+
+### "Gemini no devolvió respuesta"
+The AI service didn't respond. Check your internet and try again.
+
+### "No se pudo estimar nutrientes"
+The AI couldn't identify food in the image. Ensure your photo clearly shows a recognizable dish.
+
+### API Key Issues
+If you see errors about the Gemini API key, the app may need to be reconfigured with a valid Google AI Studio key.
+
+---
+
+**Next Steps**: Once you understand your nutrition, track your [hydration](/features/hydration) and [exercise](/features/exercise) to complete your wellness picture!

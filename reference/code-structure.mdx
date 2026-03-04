@@ -1,0 +1,291 @@
+---
+title: Code Structure
+description: Overview of Vitu's project structure and file organization
+---
+
+## Project Overview
+
+Vitu is a Flutter wellness application with a unique single-file architecture. The entire application logic, UI, and state management is contained within a single main.dart file (6,698 lines), demonstrating a monolithic approach to Flutter development.
+
+## Directory Layout
+
+```
+vitu/
+├── lib/
+│   └── main.dart              # Complete app implementation (6,698 lines)
+├── android/                   # Android platform configuration
+├── ios/                       # iOS platform configuration
+├── windows/                   # Windows platform configuration
+├── linux/                     # Linux platform configuration
+├── macos/                     # macOS platform configuration
+├── web/                       # Web platform configuration
+├── assets/                    # App assets and images
+│   └── WhatsApp Image 2026-02-16 at 12.16.07 PM.jpeg
+├── test/                      # Test files
+├── pubspec.yaml               # Dependencies and configuration
+├── analysis_options.yaml      # Linter configuration
+└── README.md                  # Project documentation
+```
+
+## main.dart Structure
+
+The main.dart file is organized into the following sections:
+
+### 1. Imports and Configuration (Lines 1-20)
+
+- Core Flutter imports (Material, Cupertino, Services)
+- Third-party dependencies (image_picker, geolocator, sensors_plus, fl_chart, hive_flutter, google_generative_ai)
+- Platform-specific imports (dart:io, dart:async, dart:convert, dart:math, dart:ui)
+
+### 2. Application Entry Point (Lines 21-54)
+
+**main() function** (lib/main.dart:21-31)
+- Initializes Flutter bindings
+- Opens Hive boxes for data persistence:
+  - `users` - User profile data
+  - `user_settings` - App preferences
+  - `daily_exercise` - Exercise tracking
+  - `hydration_logs` - Water intake logs
+  - `daily_hydration_summary` - Daily summaries
+- Sets immersive UI mode
+- Launches MyApp widget
+
+**MyApp widget** (lib/main.dart:39-54)
+- Material App configuration
+- Lime color scheme with Material 3
+- Routes to SplashScreen
+
+### 3. Data Models (Lines 56-200)
+
+**User class** (lib/main.dart:56-125)
+- Properties: nombre, apellido, genero, edad, altura, peso, correo, contrasena
+- UI settings: brightness, seedColor, fontFamily, followLocation
+- Serialization: toMap() and fromMap() methods
+
+**UserSettings class** (lib/main.dart:161-200)
+- Theme preferences (brightness, seedColor, fontFamily)
+- Location tracking (followLocation)
+- Hydration goal (metaHydratationMl)
+
+**Recipe Models** (lib/main.dart:280-317)
+- `_Receta`: Recipe data (nombre, tiempo, dificultad, ingredientes, nutricion)
+- `_Ingrediente`: Ingredient information
+- `_Nutricion`: Nutritional data (kcal, proteinas, carbohidratos, grasas)
+
+### 4. Data Persistence Layer (Lines 127-268)
+
+Hive-based storage functions:
+- `getCurrentUserEmail()` (lib/main.dart:132-136)
+- `getUserByEmail()` (lib/main.dart:138-142)
+- `getCurrentUser()` (lib/main.dart:144-148)
+- `saveCurrentUser()` (lib/main.dart:150-153)
+- `verifyLogin()` (lib/main.dart:155-159)
+- `getSettingsForUser()` (lib/main.dart:211-215)
+- `saveSettings()` (lib/main.dart:217-219)
+- `addHydrationMl()` (lib/main.dart:224-268)
+- `computeDailyHydrationGoalMl()` (lib/main.dart:202-209)
+
+### 5. Main Navigation (Lines 319-420)
+
+**VidaPlusApp widget** (lib/main.dart:319-420)
+- Bottom navigation with 5 tabs:
+  - Home (Nutrition)
+  - Exercise
+  - Hydration
+  - Sleep
+  - Settings
+- Theme management (brightness, seed color, font family)
+- IndexedStack for tab switching
+
+### 6. UI Components
+
+**PressableScale widget** (lib/main.dart:422-446)
+- Reusable button with scale animation
+- Provides tactile feedback on press
+
+### 7. Feature Screens
+
+#### HomeScreen (Lines 448-1630)
+- **Purpose**: Food analysis using Gemini AI
+- **Key Features**:
+  - Camera/gallery image picker
+  - AI-powered nutritional analysis
+  - Recipe recommendations
+  - PieChart visualization (fl_chart)
+  - Photo gallery management
+- **Key Methods**:
+  - `_takePhoto()` (lib/main.dart:529-532)
+  - `_analizarConGemini()` (lib/main.dart:629-789)
+  - `_cargarRecetasRecomendadas()` (lib/main.dart:1285-1309)
+  - `_parseRecetas()` (lib/main.dart:1311-1393)
+  - `_macroSections()` (lib/main.dart:1587-1629)
+
+#### ExerciseScreen (Lines 1632-2431)
+- **Purpose**: Step tracking and activity detection
+- **Key Features**:
+  - Real-time step counting
+  - Activity recognition (walking, running, vehicle, stationary)
+  - Geolocator for speed tracking
+  - Accelerometer for step detection
+  - Weekly activity bar chart
+  - Workout routine suggestions (Strength, Yoga, Stretching)
+- **Key Methods**:
+  - `_ensurePermissionAndStart()` (lib/main.dart:1739-1769)
+  - `_onAccel()` (lib/main.dart:1806-1848)
+  - `_persistSteps()` (lib/main.dart:1712-1722)
+  - `_weeklyBarChart()` (lib/main.dart:2344-2430)
+- **Activity Detection**:
+  - Vehicle: Speed > 15 km/h (steps not counted)
+  - Walking: Speed < 6 km/h, magnitude > 0.9
+  - Running: Speed < 12 km/h, magnitude > 1.4
+  - Stationary: Speed < 0.5 km/h
+
+#### RoutineSuggestionScreen (Lines 2433-2816)
+- **Purpose**: AI-generated workout routines
+- **Features**:
+  - Personalized exercise suggestions via Gemini
+  - JSON parsing of workout data
+  - Exercise detail screens
+
+#### HydrationScreen (Lines ~3000-4500)
+- **Purpose**: Water intake tracking
+- **Key Features**:
+  - Quick-add buttons (+100ml, +250ml, +500ml)
+  - Daily goal calculation based on weight (35ml/kg)
+  - Circular progress indicator
+  - Weekly hydration chart
+  - Persistent storage in Hive
+
+#### SleepScreen (Lines ~4500-5500)
+- **Purpose**: Sleep tracking via screen state
+- **Key Features**:
+  - Automatic sleep detection (19:00-07:00)
+  - Screen state monitoring
+  - Sleep quality rating (editable)
+  - Weekly sleep chart
+  - Duration calculation
+
+#### SettingsScreen (Lines ~5500-6698)
+- **Purpose**: App configuration and user profile
+- **Key Features**:
+  - Theme switching (light/dark)
+  - Custom seed color picker
+  - Font family selection
+  - Personal data management
+  - Password change
+  - Logout functionality
+  - Hydration goal customization
+
+## Platform Folders
+
+### android/
+Android-specific configuration:
+- Build configuration (build.gradle)
+- Manifest permissions (camera, location, sensors)
+- Minimum SDK: Configured for AGP 8+
+- Removed incompatible activity_recognition_flutter plugin
+
+### ios/
+iOS-specific configuration:
+- Info.plist with permission descriptions
+- Camera usage description
+- Location usage description
+- Photo library usage description
+
+### windows/, linux/, macos/
+Desktop platform configurations:
+- Native build files
+- Platform channels (if needed)
+- App icons and resources
+
+### web/
+Web platform configuration:
+- index.html entry point
+- Web-specific assets
+- Service worker configuration
+
+## Assets Folder
+
+Contains:
+- App icon: `WhatsApp Image 2026-02-16 at 12.16.07 PM.jpeg`
+- Used for launcher icons across all platforms
+- Configured in pubspec.yaml with flutter_launcher_icons
+
+## Key Classes and Widgets
+
+| Class/Widget | Purpose | Location |
+|--------------|---------|----------|
+| `MyApp` | Root application widget | lib/main.dart:39 |
+| `User` | User data model | lib/main.dart:56 |
+| `UserSettings` | Settings data model | lib/main.dart:161 |
+| `VidaPlusApp` | Main navigation container | lib/main.dart:319 |
+| `PressableScale` | Animated button wrapper | lib/main.dart:422 |
+| `HomeScreen` | Nutrition tracking | lib/main.dart:448 |
+| `ExerciseScreen` | Step tracking | lib/main.dart:1635 |
+| `HydrationScreen` | Water intake | ~line 3000 |
+| `SleepScreen` | Sleep monitoring | ~line 4500 |
+| `SettingsScreen` | App configuration | ~line 5500 |
+| `ActivityKind` | Exercise type enum | lib/main.dart:1633 |
+| `_Receta` | Recipe model | lib/main.dart:280 |
+| `_Ingrediente` | Ingredient model | lib/main.dart:300 |
+| `_Nutricion` | Nutrition model | lib/main.dart:306 |
+
+## File Organization Rationale
+
+### Why Single-File Architecture?
+
+1. **Simplicity**: All code in one place makes it easy to search and understand data flow
+2. **Rapid Prototyping**: Fast iteration without managing multiple files
+3. **Self-Contained**: No complex module dependencies or import chains
+4. **Educational**: Clear progression from app entry to UI to data
+
+### Trade-offs
+
+**Advantages:**
+- Easy to navigate with IDE search (Ctrl+F)
+- No file organization decisions needed
+- Clear mental model of app structure
+- Fast compile times (single compilation unit)
+
+**Disadvantages:**
+- Large file can be overwhelming
+- Limited code reusability across projects
+- Difficult for team collaboration (merge conflicts)
+- IDE performance may degrade with large files
+- Testing individual components is harder
+
+### When to Refactor
+
+Consider splitting into modules when:
+- Team size grows beyond 2-3 developers
+- Features become independent products
+- Need to share code across multiple apps
+- File size exceeds 10,000 lines
+- IDE performance degrades noticeably
+
+## Code Organization Best Practices
+
+Despite being a single file, the code follows good organization:
+
+1. **Top-down flow**: Global utilities → Models → Widgets → Screens
+2. **Grouped by feature**: Each screen has its state, methods, and UI together
+3. **Consistent naming**: Private methods prefixed with `_`
+4. **Clear separation**: Data layer (Hive) separate from UI layer
+5. **Type safety**: Strong typing throughout (User, UserSettings, etc.)
+
+## Navigation Structure
+
+```
+SplashScreen
+    ↓
+LoginScreen / RegisterScreen
+    ↓
+VidaPlusApp (Bottom Navigation)
+    ├── HomeScreen (Index 0)
+    ├── ExerciseScreen (Index 1)
+    │   └── RoutineSuggestionScreen
+    │       └── SessionDetailScreen
+    ├── HydrationScreen (Index 2)
+    ├── SleepScreen (Index 3)
+    └── SettingsScreen (Index 4)
+```

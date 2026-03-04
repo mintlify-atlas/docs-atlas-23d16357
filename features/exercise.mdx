@@ -1,0 +1,214 @@
+---
+title: Exercise Tracking
+description: Count your steps, track activity types, and avoid false counts while in vehicles
+---
+
+## Overview
+
+Vitu's Exercise feature automatically tracks your physical activity throughout the day using your device's sensors and GPS. It counts your steps, detects whether you're walking or running, and intelligently **ignores step counts when you're in a vehicle** traveling faster than 15 km/h.
+
+## How to Use
+
+<Steps>
+  <Step title="Grant Permissions">
+    When you first open the Exercise screen, Vitu will request:
+    - **Location services**: To measure your speed and detect vehicle movement
+    - **Motion sensors**: To count steps from accelerometer data
+    
+    Accept these permissions for the feature to work properly.
+  </Step>
+
+  <Step title="Keep App Open (or Running in Background)">
+    The app actively monitors your movement while on the Exercise screen. Your step count updates in real-time as you move.
+    
+    <Note>
+      For continuous tracking throughout the day, keep the app running in the background or return to the Exercise tab periodically to sync your count.
+    </Note>
+  </Step>
+
+  <Step title="Monitor Your Activity">
+    The screen displays:
+    - Current step count for today
+    - Progress percentage toward your 10,000-step daily goal
+    - Current activity type (walking, running, stationary, or in vehicle)
+    - Current speed in km/h
+    - Real-time cardio chart showing step bursts every 10 seconds
+  </Step>
+
+  <Step title="Pause When Needed">
+    Tap the **"Pausar"** button to temporarily stop counting steps. This is useful if you're moving around but don't want to count it (e.g., pacing while on a phone call).
+    
+    Tap **"Reanudar"** to continue tracking.
+  </Step>
+</Steps>
+
+## What Data is Tracked
+
+### Daily Metrics
+
+- **Steps**: Total number of steps detected today
+- **Speed**: Current movement speed in kilometers per hour
+- **Activity Type**: 
+  - **Caminando** (Walking): Speed < 6 km/h with movement
+  - **Corriendo** (Running): Speed 6-12 km/h with strong movement
+  - **Parado** (Stationary): Speed < 0.5 km/h
+  - **En vehículo** (In Vehicle): Speed > 15 km/h
+
+<Info>
+  When you're detected as "En vehículo," step counting is **automatically paused** to prevent false counts from bumpy roads or vibrations.
+</Info>
+
+### Historical Data
+
+Vitu stores your step count for the **past 7 days**, allowing you to see your weekly activity trends.
+
+## How Results Are Displayed
+
+### Main Progress Circle
+
+At the top of the screen, a large circular progress indicator shows:
+- **Percentage completed** of your 10,000-step daily goal
+- **Total steps today** in large text
+- Color-coded by your theme's seed color
+
+### Activity Status Bar
+
+Below the main circle, you'll see:
+- An **icon** representing your current activity (walking, running, vehicle, or stationary)
+- Your **activity label** in Spanish
+- **Current speed** in km/h
+- **Estimated calories** burned (calculated as steps × 0.04)
+
+### Real-Time Cardio Chart
+
+The app displays a **line chart** that updates every 10 seconds, showing:
+- Number of steps taken in each 10-second interval
+- Up to the last 10 minutes of data (60 data points maximum)
+- Smooth, curved line with shaded area underneath
+
+This chart helps you see your activity intensity in real-time.
+
+### Weekly Bar Chart
+
+Scroll down to see a bar chart showing your daily step counts for the **past 7 days** (Monday through Sunday):
+- Each bar represents one day
+- Height corresponds to total steps that day (max scale: 12,000 steps)
+- Days are labeled: L, M, X, J, V, S, D
+
+## Exercise Routine Suggestions
+
+At the bottom of the Exercise screen, you'll find three quick-access tiles:
+
+### 1. Fuerza (Strength Training)
+Tap "Empezar" to get AI-generated strength workout suggestions personalized to your age, gender, weight, and height.
+
+### 2. Yoga
+Tap "Empezar" for yoga session recommendations tailored to your profile.
+
+### 3. Estiramientos (Stretching)
+Tap "Empezar" to receive stretching routines designed for your body.
+
+<Tip>
+  Each routine type generates **4 complete workout sessions** with detailed exercises, sets/reps, duration, and descriptions—all powered by Google Gemini AI.
+</Tip>
+
+### Viewing Routine Details
+
+When you tap a routine:
+1. You'll see a list of 4 suggested sessions
+2. Tap any session to view:
+   - Session name and duration
+   - Full list of exercises with series/reps or time
+   - Descriptions for each exercise
+3. Sessions are generated fresh each time, so you get variety!
+
+## Tips for Best Results
+
+### Allow Background Location
+
+For the most accurate vehicle detection:
+- Grant "Allow all the time" or "Allow while using the app" location permission
+- Enable high-accuracy GPS in your device settings
+
+### Keep Your Phone on You
+
+The accelerometer detects steps based on your phone's movement, so:
+- Carry your phone in your pocket, bag, or use an armband
+- Holding it in your hand works, but pocket placement is more accurate
+
+### Understand Step Sensitivity
+
+Vitu uses different thresholds for step detection:
+- **Walking threshold**: Accelerometer magnitude > 0.9
+- **Running threshold**: Accelerometer magnitude > 1.4
+- **Debounce timing**: 320-450 milliseconds between steps (to avoid double-counting)
+
+<Note>
+  Steps are saved to local storage every **10 steps**, so even if the app crashes, you won't lose much progress.
+</Note>
+
+### Daily Reset
+
+Your step count automatically resets to zero at midnight each day. Previous days' data is preserved in the weekly chart.
+
+## How Vehicle Detection Works
+
+Vitu's smart vehicle detection prevents false step counts:
+
+1. **GPS Speed Monitoring**: The app continuously checks your movement speed
+2. **15 km/h Threshold**: If speed exceeds 15 km/h, you're marked as "En vehículo"
+3. **Step Blocking**: While in vehicle mode, accelerometer events are ignored
+4. **Automatic Resume**: When speed drops below 15 km/h, step counting resumes
+
+<Warning>
+  If you're cycling or on a fast electric scooter (>15 km/h), steps won't be counted. This is intentional to prevent false positives.
+</Warning>
+
+## Understanding Your Activity Types
+
+### Stationary (Parado)
+- Speed < 0.5 km/h
+- You're standing still or sitting
+- Icon: Meditation pose
+
+### Walking (Caminando)
+- Speed: 0.5-6 km/h
+- Moderate movement detected
+- Icon: Walking person
+
+### Running (Corriendo)
+- Speed: 6-12 km/h
+- Strong movement with high accelerometer magnitude (>1.4)
+- Icon: Running person
+
+### In Vehicle (En vehículo)
+- Speed > 15 km/h
+- Steps are **not counted**
+- Icon: Car
+- Status shows in gray to indicate paused counting
+
+## Troubleshooting
+
+### "Activa el servicio de ubicación"
+Your device's location services are turned off. Go to Settings > Location and enable it.
+
+### "Permiso de ubicación"
+You denied location permission. Go to Settings > Apps > Vitu > Permissions and grant location access.
+
+### Steps Not Counting
+- Ensure you're moving with your phone
+- Check that the app isn't paused (look for "Pausar" button, not "Reanudar")
+- Verify you're not marked as "En vehículo" (which blocks counting)
+
+### Steps Counting While Driving
+If steps are being counted in a car:
+- Ensure location permission is granted
+- Check that GPS is enabled and has a signal
+- The 15 km/h threshold may not be reached in slow city traffic
+
+### Weekly Chart Shows Zero
+Data is stored locally. If you recently installed the app or cleared data, historical counts will be empty until you accumulate new daily records.
+
+---
+
+**Next Steps**: Complete your wellness tracking by monitoring your [hydration](/features/hydration) and [sleep](/features/sleep)!

@@ -1,0 +1,535 @@
+---
+title: Configuration
+description: Configure Vitu securely and customize settings
+---
+
+## Gemini API Configuration
+
+The Gemini API key is **critical** for Vitu's food analysis features. This section covers secure configuration practices.
+
+### Current Implementation
+
+In the default setup, the API key is hardcoded in `lib/main.dart:489`:
+
+```dart main.dart
+const apiKey = 'AIzaSyCEwgwToG9cfPvf2wzNHGOhSeXCLafD1ms';
+```
+
+<Warning>
+  **Security Risk:** Never commit real API keys to version control. The key in the source code is for demonstration only and should be replaced immediately.
+</Warning>
+
+### Secure Configuration Methods
+
+#### Option 1: Environment Variables (Recommended)
+
+<Steps>
+  <Step title="Install flutter_dotenv">
+    Add to `pubspec.yaml`:
+    ```yaml
+    dependencies:
+      flutter_dotenv: ^5.1.0
+    ```
+    
+    Run:
+    ```bash
+    flutter pub get
+    ```
+  </Step>
+
+  <Step title="Create .env file">
+    Create `.env` in your project root:
+    ```bash
+    GEMINI_API_KEY=your_actual_api_key_here
+    ```
+  </Step>
+
+  <Step title="Add .env to .gitignore">
+    Ensure `.env` is in your `.gitignore`:
+    ```bash
+    echo ".env" >> .gitignore
+    ```
+  </Step>
+
+  <Step title="Update main.dart">
+    Replace the hardcoded key at line 489:
+    ```dart
+    import 'package:flutter_dotenv/flutter_dotenv.dart';
+    
+    Future<void> main() async {
+      WidgetsFlutterBinding.ensureInitialized();
+      await dotenv.load(fileName: ".env");
+      await Hive.initFlutter();
+      // ... rest of initialization
+    }
+    ```
+    
+    Then in `_HomeScreenState.initState()` (line 484):
+    ```dart
+    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+    if (apiKey.isEmpty) {
+      throw Exception('GEMINI_API_KEY not found in .env file');
+    }
+    ```
+  </Step>
+
+  <Step title="Add .env to assets">
+    In `pubspec.yaml`:
+    ```yaml
+    flutter:
+      assets:
+        - .env
+        - assets/WhatsApp Image 2026-02-16 at 12.16.07 PM.jpeg
+    ```
+  </Step>
+</Steps>
+
+#### Option 2: Platform-Specific Configuration
+
+**Android:**
+
+Store in `android/local.properties` (already in `.gitignore`):
+```properties
+gemini.api.key=your_actual_api_key_here
+```
+
+Access via native code or use a build-time code generation tool.
+
+**iOS:**
+
+Store in `ios/Flutter/Secrets.xcconfig` (add to `.gitignore`):
+```
+GEMINI_API_KEY=your_actual_api_key_here
+```
+
+#### Option 3: Firebase Remote Config
+
+For production apps, consider Firebase Remote Config to:
+- Store keys server-side
+- Update keys without app redeployment
+- Implement feature flags
+
+### API Key Best Practices
+
+<Warning>
+  **Critical Security Guidelines:**
+  - ✅ Store keys in environment variables or secure vaults
+  - ✅ Add key files to `.gitignore`
+  - ✅ Use different keys for development and production
+  - ✅ Rotate keys regularly
+  - ✅ Set up usage limits in Google Cloud Console
+  - ❌ Never commit keys to Git
+  - ❌ Never share keys publicly
+  - ❌ Never hardcode keys in production builds
+</Warning>
+
+### Obtaining a Gemini API Key
+
+<Steps>
+  <Step title="Visit Google AI Studio">
+    Go to [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+  </Step>
+
+  <Step title="Create API key">
+    Click **"Create API key"** and select a Google Cloud project (or create a new one).
+  </Step>
+
+  <Step title="Copy the key">
+    Copy the generated key immediately. It won't be shown again.
+  </Step>
+
+  <Step title="Configure usage limits">
+    In Google Cloud Console:
+    1. Enable the **Generative Language API**
+    2. Set quotas and rate limits
+    3. Enable billing alerts
+  </Step>
+</Steps>
+
+## Platform Permissions
+
+Vitu requires several device permissions to function. These are already configured in the source but can be customized.
+
+### Android Permissions
+
+Configured in `android/app/src/main/AndroidManifest.xml:2-3`:
+
+```xml
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+```
+
+**Purpose:**
+- `ACCESS_FINE_LOCATION` - GPS-based step tracking and activity detection
+- `ACCESS_COARSE_LOCATION` - Fallback location for step counting
+
+**Runtime Permissions:**
+
+The `geolocator` package automatically handles runtime permission requests. Users will see a system dialog when the Exercise screen first accesses location.
+
+### iOS Permissions
+
+Configured in `ios/Runner/Info.plist:48-51`:
+
+```xml
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>Necesitamos ubicación para contar pasos y detectar actividad</string>
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>Necesitamos ubicación para contar pasos y detectar actividad</string>
+```
+
+**Customization:**
+
+To change the permission request message, edit the `<string>` values:
+
+```xml
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>Vitu needs your location to count steps and detect if you're in a vehicle</string>
+```
+
+### Camera and Photo Library
+
+Handled automatically by the `image_picker` plugin. No manual configuration needed.
+
+**iOS Auto-Configuration:**
+- Camera: Prompts on first use
+- Photo Library: Prompts on first use
+
+**Android Auto-Configuration:**
+- Camera: No permission required on Android 11+
+- Storage: Uses scoped storage (no permission required)
+
+### Motion Sensors
+
+Accelerometer access via `sensors_plus` requires no explicit permissions on Android or iOS.
+
+## App Configuration
+
+### Hive Database Initialization
+
+Vitu initializes Hive in `main()` at `lib/main.dart:21-28`:
+
+```dart
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  await Hive.openBox('users');
+  await Hive.openBox('user_settings');
+  await Hive.openBox('daily_exercise');
+  await Hive.openBox('hydration_logs');
+  await Hive.openBox('daily_hydration_summary');
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  runApp(const MyApp());
+}
+```
+
+**Boxes:**
+- `users` - User profiles and authentication
+- `user_settings` - Theme, preferences, hydration goals
+- `daily_exercise` - Step counts and activity data
+- `hydration_logs` - Individual water intake events
+- `daily_hydration_summary` - Aggregated daily totals
+
+**Adding New Boxes:**
+
+To add a new data collection:
+
+```dart
+await Hive.openBox('my_new_feature');
+```
+
+Then access it anywhere:
+
+```dart
+Box get _myFeatureBox => Hive.box('my_new_feature');
+```
+
+### User Settings
+
+User settings are stored per-user in the `user_settings` box with the key `settings:{userId}`.
+
+**Available Settings:**
+
+See `UserSettings` class in `lib/main.dart:161-200`:
+
+```dart
+class UserSettings {
+  final String userId;
+  final String? brightness;        // 'light' | 'dark'
+  final int? seedColor;            // ARGB color int
+  final String? fontFamily;        // null | 'serif' | etc.
+  final bool? followLocation;      // Enable location tracking
+  final double? metaHydratationMl; // Custom hydration goal
+}
+```
+
+**Accessing Settings:**
+
+```dart
+final settings = getSettingsForUser(userEmail);
+if (settings?.brightness == 'dark') {
+  // Use dark theme
+}
+```
+
+**Saving Settings:**
+
+```dart
+await saveSettings(UserSettings(
+  userId: currentUser.correo,
+  brightness: 'dark',
+  seedColor: colorToArgb(Colors.blue),
+  metaHydratationMl: 2500.0,
+));
+```
+
+### Hydration Goal Calculation
+
+The default hydration goal is calculated in `lib/main.dart:202-209`:
+
+```dart
+double computeDailyHydrationGoalMl(User u) {
+  final base = (u.peso > 0 ? u.peso : 70.0) * 35.0;
+  double adj = base;
+  if (u.edad > 0 && u.edad < 14) adj = base * 0.9;
+  if (u.edad >= 65) adj = base * 0.95;
+  if (u.genero.toLowerCase() == 'masculino') adj += 200;
+  return adj.clamp(1200.0, 4500.0);
+}
+```
+
+**Formula:**
+- Base: `weight_kg * 35ml`
+- Age less than 14: -10%
+- Age 65 or older: -5%
+- Male: +200ml
+- Clamped to 1200-4500ml
+
+**Customization:**
+
+To change the formula, edit the function above. Example - increase base rate:
+
+```dart
+final base = (u.peso > 0 ? u.peso : 70.0) * 40.0; // Changed from 35 to 40
+```
+
+## Theme Configuration
+
+Vitu uses Material 3 with dynamic theming. The theme is configured in `lib/main.dart:44-52`:
+
+```dart
+MaterialApp(
+  title: 'Vitu',
+  debugShowCheckedModeBanner: false,
+  theme: ThemeData(
+    colorScheme: ColorScheme.fromSeed(seedColor: Colors.lime),
+    useMaterial3: true,
+  ),
+  home: const SplashScreen(),
+)
+```
+
+**Default Seed Color:** `Colors.lime`
+
+**User-Customizable:**
+
+Users can change the seed color from Settings, which updates the entire app theme dynamically. The color is stored in `UserSettings.seedColor` as an ARGB integer.
+
+### Adding Custom Fonts
+
+<Steps>
+  <Step title="Add font files">
+    Create `fonts/` directory and add `.ttf` files:
+    ```
+    fonts/
+      Roboto-Regular.ttf
+      Roboto-Bold.ttf
+    ```
+  </Step>
+
+  <Step title="Declare in pubspec.yaml">
+    ```yaml
+    flutter:
+      fonts:
+        - family: Roboto
+          fonts:
+            - asset: fonts/Roboto-Regular.ttf
+            - asset: fonts/Roboto-Bold.ttf
+              weight: 700
+    ```
+  </Step>
+
+  <Step title="Use in Settings">
+    The font family is already configurable via `UserSettings.fontFamily`. Users can select from available fonts in the Settings screen.
+  </Step>
+</Steps>
+
+## Environment Variables Reference
+
+**Recommended .env structure:**
+
+```bash
+# Google AI (Gemini)
+GEMINI_API_KEY=your_gemini_key_here
+GEMINI_MODEL=gemini-2.5-flash
+
+# App Configuration
+APP_NAME=Vitu
+DEFAULT_HYDRATION_GOAL_ML=2000
+
+# Debug Flags
+ENABLE_DEBUG_LOGGING=false
+```
+
+**Accessing in code:**
+
+```dart
+final apiKey = dotenv.env['GEMINI_API_KEY']!;
+final modelName = dotenv.env['GEMINI_MODEL'] ?? 'gemini-2.5-flash';
+```
+
+## Security Best Practices
+
+<Warning>
+  **Critical: Production Security Checklist**
+  
+  Before deploying Vitu:
+  
+  ✅ Remove all hardcoded API keys
+  
+  ✅ Use environment variables or secure vaults
+  
+  ✅ Add `.env`, `local.properties`, and secrets files to `.gitignore`
+  
+  ✅ Enable API key restrictions in Google Cloud Console:
+  - Restrict to specific APIs (Generative Language API only)
+  - Set up usage quotas
+  - Enable billing alerts
+  
+  ✅ Implement rate limiting for AI requests
+  
+  ✅ Consider hashing passwords if adding backend authentication (currently stored as plaintext in local Hive)
+  
+  ✅ Review all platform permissions - request only what's necessary
+  
+  ✅ Test permission flows on both Android and iOS
+</Warning>
+
+### Password Storage
+
+<Warning>
+  **Current Implementation:** User passwords are stored as **plaintext** in the local Hive database.
+  
+  This is acceptable for a local-only app, but if you add backend authentication, you MUST:
+  - Hash passwords using bcrypt, argon2, or similar
+  - Use secure communication (HTTPS)
+  - Implement proper authentication tokens
+</Warning>
+
+Example secure password storage:
+
+```dart
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
+
+String hashPassword(String password) {
+  final bytes = utf8.encode(password);
+  final digest = sha256.convert(bytes);
+  return digest.toString();
+}
+
+bool verifyPassword(String input, String hashed) {
+  return hashPassword(input) == hashed;
+}
+```
+
+## Data Privacy
+
+Vitu is designed with privacy in mind:
+
+**Local-First:**
+- All user data stored locally in Hive (NoSQL)
+- No backend servers
+- No data synchronization
+
+**External Data Sharing:**
+- Food images sent to Google Gemini API for analysis
+- Location coordinates used locally for step tracking (not sent externally)
+
+**User Control:**
+- Users can delete the app to remove all data
+- No analytics or tracking by default
+
+**Compliance Recommendations:**
+
+If deploying publicly:
+- Add a privacy policy explaining Gemini API usage
+- Inform users that food images are sent to Google
+- Provide opt-in/opt-out for AI features
+- Comply with GDPR, CCPA if applicable
+
+## Advanced Configuration
+
+### Sleep Detection Window
+
+Sleep is detected between 19:00 and 07:00 with a 10-minute margin. To customize, find the sleep detection logic in the `SleepScreen` widget.
+
+**Current window:** 19:00 - 07:00 (7 PM to 7 AM)
+
+**To change:** Search for `19:00` and `07:00` in `lib/main.dart` and adjust.
+
+### Step Counting Threshold
+
+Steps are ignored when moving >15 km/h (vehicle detection). To adjust, find the speed check in `ExerciseScreen`.
+
+**Current threshold:** 15 km/h
+
+**To change:** Search for velocity/speed checks in the Exercise screen logic.
+
+### Gemini Model Selection
+
+The app uses `gemini-2.5-flash` (configured in `lib/main.dart:493`):
+
+```dart
+_geminiModel = GenerativeModel(
+  model: 'gemini-2.5-flash',
+  apiKey: apiKey,
+);
+```
+
+**Alternative models:**
+- `gemini-pro-vision` - Better image understanding, slower
+- `gemini-pro` - Text only (no images)
+
+To change the model, update the `model:` parameter.
+
+## Troubleshooting
+
+### API key not working
+
+1. Verify the key is active in [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Check that Generative Language API is enabled
+3. Ensure no usage quotas are exceeded
+4. Try generating a new key
+
+### Hive database corruption
+
+```bash
+flutter clean
+flutter pub get
+```
+
+On the device, uninstall and reinstall the app to reset the database.
+
+### Permission denied errors
+
+- Android: Check Settings → Apps → Vitu → Permissions
+- iOS: Settings → Vitu → Location/Camera
+- Ensure `AndroidManifest.xml` and `Info.plist` have the correct entries
+
+## Next Steps
+
+- Explore the [Quickstart](/quickstart) guide to use all features
+- Review `lib/main.dart` for implementation details
+- Customize colors, fonts, and behavior
+- Add new features following the Hive database pattern

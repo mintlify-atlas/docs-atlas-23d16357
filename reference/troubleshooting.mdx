@@ -1,0 +1,834 @@
+---
+title: Troubleshooting
+description: Common issues and solutions for Vitu development and deployment
+---
+
+## Build & Compilation Issues
+
+<AccordionGroup>
+  <Accordion title="Build fails with 'Gradle sync failed' on Android">
+    **Symptom**: Android build fails with Gradle configuration errors.
+
+    **Common Causes**:
+    - AGP (Android Gradle Plugin) version incompatibility
+    - Java version mismatch
+    - Cached build artifacts
+
+    **Solutions**:
+
+    1. Clean the build cache:
+       ```bash
+       cd android
+       ./gradlew clean
+       cd ..
+       flutter clean
+       flutter pub get
+       ```
+
+    2. Check AGP version in `android/build.gradle`:
+       ```gradle
+       buildscript {
+         dependencies {
+           classpath 'com.android.tools.build:gradle:8.1.0' // AGP 8+
+         }
+       }
+       ```
+
+    3. Ensure Java 17 is installed:
+       ```bash
+       java -version  # Should show Java 17+
+       ```
+
+    4. Update Gradle wrapper:
+       ```bash
+       cd android
+       ./gradlew wrapper --gradle-version=8.3
+       ```
+
+    **Note**: Vitu requires AGP 8+ due to removal of `activity_recognition_flutter`.
+  </Accordion>
+
+  <Accordion title="iOS build fails with CocoaPods errors">
+    **Symptom**: `pod install` fails or iOS build errors related to dependencies.
+
+    **Solutions**:
+
+    1. Update CocoaPods:
+       ```bash
+       sudo gem install cocoapods
+       pod --version  # Should be 1.11+
+       ```
+
+    2. Clean and reinstall pods:
+       ```bash
+       cd ios
+       rm -rf Pods Podfile.lock
+       pod install --repo-update
+       cd ..
+       flutter clean
+       flutter build ios
+       ```
+
+    3. Check Xcode version:
+       ```bash
+       xcodebuild -version  # Should be 14.0+
+       ```
+
+    4. Set deployment target in `ios/Podfile`:
+       ```ruby
+       platform :ios, '12.0'
+       ```
+  </Accordion>
+
+  <Accordion title="Flutter SDK version mismatch">
+    **Symptom**: "The current Dart SDK version is X.X.X" but requires ^3.10.8.
+
+    **Solutions**:
+
+    1. Check Flutter version:
+       ```bash
+       flutter --version
+       ```
+
+    2. Update Flutter:
+       ```bash
+       flutter upgrade
+       flutter doctor
+       ```
+
+    3. Switch Flutter channel (if needed):
+       ```bash
+       flutter channel stable
+       flutter upgrade
+       ```
+
+    4. Verify Dart SDK:
+       ```bash
+       dart --version  # Should be 3.10.8+
+       ```
+  </Accordion>
+
+  <Accordion title="Package version conflicts">
+    **Symptom**: "version solving failed" during `flutter pub get`.
+
+    **Solutions**:
+
+    1. Run pub get with verbose output:
+       ```bash
+       flutter pub get --verbose
+       ```
+
+    2. Check for conflicting dependencies:
+       ```bash
+       flutter pub outdated
+       ```
+
+    3. Update specific package:
+       ```bash
+       flutter pub upgrade google_generative_ai
+       ```
+
+    4. Clear pub cache:
+       ```bash
+       flutter pub cache repair
+       ```
+
+    **Known Issues**:
+    - `google_generative_ai` downgraded from ^0.5.0 to ^0.4.0 for stability
+    - `screen_state` pinned to exact version 5.0.0
+  </Accordion>
+</AccordionGroup>
+
+## Permission Errors
+
+<AccordionGroup>
+  <Accordion title="Camera permission denied on Android">
+    **Symptom**: App crashes or shows error when attempting to take photos.
+
+    **Solutions**:
+
+    1. Add permissions to `android/app/src/main/AndroidManifest.xml`:
+       ```xml
+       <uses-permission android:name="android.permission.CAMERA" />
+       <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+       <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+       ```
+
+    2. Request runtime permissions (Android 6+):
+       ```dart
+       final ImagePicker picker = ImagePicker();
+       final XFile? image = await picker.pickImage(
+         source: ImageSource.camera,
+       );
+       // Permission request is automatic with image_picker
+       ```
+
+    3. Check app settings:
+       - Settings → Apps → Vitu → Permissions → Camera → Allow
+
+    4. Test on different Android versions:
+       - Android 6-10: Runtime permissions
+       - Android 11+: Scoped storage
+  </Accordion>
+
+  <Accordion title="Location permission denied">
+    **Symptom**: Exercise tracking doesn't work, speed shows 0.0 km/h.
+
+    **Solutions**:
+
+    1. **Android**: Add to `AndroidManifest.xml`:
+       ```xml
+       <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+       <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+       <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+       ```
+
+    2. **iOS**: Add to `Info.plist`:
+       ```xml
+       <key>NSLocationWhenInUseUsageDescription</key>
+       <string>Track your activity and calculate speed</string>
+       <key>NSLocationAlwaysUsageDescription</key>
+       <string>Track activity in background</string>
+       ```
+
+    3. **Runtime request** (lib/main.dart:1739-1769):
+       ```dart
+       LocationPermission perm = await Geolocator.checkPermission();
+       if (perm == LocationPermission.denied) {
+         perm = await Geolocator.requestPermission();
+       }
+       if (perm == LocationPermission.deniedForever) {
+         // Show dialog to open settings
+         await Geolocator.openLocationSettings();
+       }
+       ```
+
+    4. Enable location services:
+       - Android: Settings → Location → On
+       - iOS: Settings → Privacy → Location Services → On
+  </Accordion>
+
+  <Accordion title="Sensor access errors">
+    **Symptom**: Step counting doesn't work, accelerometer data unavailable.
+
+    **Solutions**:
+
+    1. **Check sensor availability**:
+       ```dart
+       _accelSub = userAccelerometerEventStream().listen(
+         (event) {
+           print('Accel: ${event.x}, ${event.y}, ${event.z}');
+         },
+         onError: (e) {
+           print('Sensor error: $e');
+         },
+       );
+       ```
+
+    2. **Android**: Add to `AndroidManifest.xml`:
+       ```xml
+       <uses-feature android:name="android.hardware.sensor.accelerometer" />
+       <uses-feature android:name="android.hardware.sensor.gyroscope" />
+       ```
+
+    3. **Test on physical device**: Sensors don't work on most emulators
+
+    4. **Calibrate sensors**: Settings → System → Sensors (device-specific)
+  </Accordion>
+
+  <Accordion title="Photo library access denied on iOS">
+    **Symptom**: Cannot select photos from gallery on iOS.
+
+    **Solutions**:
+
+    1. Add to `ios/Runner/Info.plist`:
+       ```xml
+       <key>NSPhotoLibraryUsageDescription</key>
+       <string>Select food photos for nutritional analysis</string>
+       <key>NSPhotoLibraryAddUsageDescription</key>
+       <string>Save analyzed food photos</string>
+       ```
+
+    2. Check iOS version compatibility:
+       - iOS 14+: Limited photos access
+       - iOS 11-13: Full library access
+
+    3. Reset permissions (for testing):
+       - Settings → General → Reset → Reset Location & Privacy
+  </Accordion>
+</AccordionGroup>
+
+## Gemini API Issues
+
+<AccordionGroup>
+  <Accordion title="Gemini API key invalid or expired">
+    **Symptom**: "API key not valid" or 401 Unauthorized errors.
+
+    **Solutions**:
+
+    1. **Generate new API key**:
+       - Visit: https://aistudio.google.com/app/apikey
+       - Create new key or regenerate existing
+       - Copy to clipboard
+
+    2. **Update in code** (lib/main.dart:489):
+       ```dart
+       const apiKey = 'YOUR_NEW_API_KEY_HERE';
+       _geminiModel = GenerativeModel(
+         model: 'gemini-2.5-flash',
+         apiKey: apiKey,
+       );
+       ```
+
+    3. **Use environment variables** (recommended):
+       ```dart
+       final apiKey = const String.fromEnvironment(
+         'GEMINI_API_KEY',
+         defaultValue: 'fallback_key',
+       );
+       ```
+
+       Run with:
+       ```bash
+       flutter run --dart-define=GEMINI_API_KEY=your_key_here
+       ```
+
+    4. **Verify key restrictions**:
+       - Check API key hasn't been restricted by IP/domain
+       - Ensure Generative Language API is enabled
+  </Accordion>
+
+  <Accordion title="Rate limit exceeded">
+    **Symptom**: "429 Too Many Requests" or "Quota exceeded" errors.
+
+    **Limits** (Free Tier):
+    - 60 requests per minute
+    - 1,500 requests per day
+    - 1 million tokens per day
+
+    **Solutions**:
+
+    1. **Implement request throttling**:
+       ```dart
+       DateTime? _lastRequest;
+       Future<void> _analizarConGemini(File foto) async {
+         final now = DateTime.now();
+         if (_lastRequest != null) {
+           final diff = now.difference(_lastRequest!);
+           if (diff.inSeconds < 2) {
+             await Future.delayed(Duration(seconds: 2 - diff.inSeconds));
+           }
+         }
+         _lastRequest = now;
+         // Make API call...
+       }
+       ```
+
+    2. **Cache responses**:
+       - Store recent analyses in Hive
+       - Avoid re-analyzing same image
+
+    3. **Upgrade to paid tier**: https://ai.google.dev/pricing
+
+    4. **Monitor usage**: Check quota in Google Cloud Console
+  </Accordion>
+
+  <Accordion title="Gemini returns empty or invalid response">
+    **Symptom**: `resp.text` is null or doesn't match expected format.
+
+    **Solutions**:
+
+    1. **Check prompt format** (lib/main.dart:646-658):
+       ```dart
+       final prompt = '''
+       Analyze this food photo.
+       Identify the main dish.
+       Estimate nutritional values.
+       Respond ONLY in this exact format, no additional text:
+       Plato: [approximate name]
+       Calorías: [number] kcal
+       Proteínas: [number] g
+       Carbohidratos: [number] g
+       Grasas: [number] g
+       ''';
+       ```
+
+    2. **Add response validation**:
+       ```dart
+       final text = resp.text ?? '';
+       debugPrint('Gemini raw response:\n$text');
+       if (text.isEmpty) {
+         throw Exception('Empty response from Gemini');
+       }
+       ```
+
+    3. **Handle parsing errors** (lib/main.dart:681-711):
+       ```dart
+       final platoMatch = RegExp(
+         r'^Plato:\s*(.+)$',
+         multiLine: true,
+         caseSensitive: false,
+       ).firstMatch(text);
+       
+       if (platoMatch == null) {
+         print('Failed to parse dish name');
+         // Fallback or retry
+       }
+       ```
+
+    4. **Verify model name**:
+       - Use `gemini-2.5-flash` (latest)
+       - Fallback to `gemini-pro-vision` if needed
+  </Accordion>
+
+  <Accordion title="Image too large for Gemini API">
+    **Symptom**: "Request payload too large" or timeout errors.
+
+    **Image Limits**:
+    - Max file size: 4MB (recommended < 2MB)
+    - Supported formats: JPEG, PNG, WebP
+    - Max dimensions: 3000x3000px
+
+    **Solutions**:
+
+    1. **Compress image** (lib/main.dart:536-539):
+       ```dart
+       final XFile? xfile = await picker.pickImage(
+         source: source,
+         imageQuality: 85,  // Reduce to 70-80 for larger images
+         maxWidth: 1920,
+         maxHeight: 1920,
+       );
+       ```
+
+    2. **Check file size before upload**:
+       ```dart
+       final bytes = await foto.readAsBytes();
+       final length = bytes.length;
+       if (length > 2 * 1024 * 1024) {  // 2MB
+         throw Exception('Image too large: ${length ~/ 1024}KB');
+       }
+       ```
+
+    3. **Use image compression package**:
+       ```yaml
+       dependencies:
+         image: ^4.0.0
+       ```
+
+       ```dart
+       import 'package:image/image.dart' as img;
+       
+       final image = img.decodeImage(await foto.readAsBytes());
+       final resized = img.copyResize(image!, width: 1024);
+       final compressed = img.encodeJpg(resized, quality: 85);
+       ```
+  </Accordion>
+
+  <Accordion title="Network connectivity issues">
+    **Symptom**: `SocketException` or "No internet connection" errors.
+
+    **Solutions**:
+
+    1. **Check internet connectivity**:
+       ```dart
+       import 'dart:io';
+       
+       Future<bool> hasNetwork() async {
+         try {
+           final result = await InternetAddress.lookup('google.com');
+           return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+         } catch (_) {
+           return false;
+         }
+       }
+       ```
+
+    2. **Add timeout to requests** (lib/main.dart:665-666):
+       ```dart
+       final resp = await _geminiModel
+         .generateContent([content])
+         .timeout(const Duration(seconds: 20));
+       ```
+
+    3. **Implement retry logic**:
+       ```dart
+       int retries = 3;
+       while (retries > 0) {
+         try {
+           final resp = await _geminiModel.generateContent([content]);
+           return resp;
+         } catch (e) {
+           retries--;
+           if (retries == 0) rethrow;
+           await Future.delayed(Duration(seconds: 2));
+         }
+       }
+       ```
+
+    4. **Add error UI** (lib/main.dart:614-627):
+       ```dart
+       _showSnack(
+         'No internet connection',
+         error: true,
+         onRetry: () {
+           if (_photo != null) _analizarConGemini(_photo!);
+         },
+       );
+       ```
+  </Accordion>
+</AccordionGroup>
+
+## Data & Storage Issues
+
+<AccordionGroup>
+  <Accordion title="Hive box not opened or corrupted">
+    **Symptom**: "Box not found" or "Failed to open box" errors.
+
+    **Solutions**:
+
+    1. **Ensure boxes are opened** (lib/main.dart:23-28):
+       ```dart
+       await Hive.initFlutter();
+       await Hive.openBox('users');
+       await Hive.openBox('user_settings');
+       await Hive.openBox('daily_exercise');
+       await Hive.openBox('hydration_logs');
+       await Hive.openBox('daily_hydration_summary');
+       ```
+
+    2. **Delete corrupted box**:
+       ```dart
+       await Hive.deleteBoxFromDisk('corrupted_box_name');
+       await Hive.openBox('corrupted_box_name');
+       ```
+
+    3. **Clear all Hive data** (for testing):
+       ```dart
+       await Hive.close();
+       final dir = await getApplicationDocumentsDirectory();
+       final hivePath = '${dir.path}/hive';
+       final hiveDir = Directory(hivePath);
+       if (await hiveDir.exists()) {
+         await hiveDir.delete(recursive: true);
+       }
+       await Hive.initFlutter();
+       // Re-open boxes
+       ```
+
+    4. **Check box names match**:
+       ```dart
+       Box get _usersBox => Hive.box('users');  // Must match opened name
+       ```
+  </Accordion>
+
+  <Accordion title="User data not persisting">
+    **Symptom**: Login state lost after app restart, settings reset.
+
+    **Solutions**:
+
+    1. **Verify save operations** (lib/main.dart:150-153):
+       ```dart
+       Future<void> saveCurrentUser(User u) async {
+         await _usersBox.put('user:${u.correo}', u.toMap());
+         await _usersBox.put('currentUserEmail', u.correo);
+         print('User saved: ${u.correo}');
+       }
+       ```
+
+    2. **Check key format**:
+       ```dart
+       // Consistent key format
+       final key = 'user:${email.trim().toLowerCase()}';
+       final data = _usersBox.get(key);
+       ```
+
+    3. **Flush data manually**:
+       ```dart
+       await _usersBox.put(key, value);
+       await _usersBox.flush();  // Force write to disk
+       ```
+
+    4. **Debug stored data**:
+       ```dart
+       print('All users box keys: ${_usersBox.keys}');
+       print('Current user: ${getCurrentUserEmail()}');
+       ```
+  </Accordion>
+
+  <Accordion title="Exercise/hydration data not showing">
+    **Symptom**: Weekly charts empty, step counts reset to zero.
+
+    **Solutions**:
+
+    1. **Verify date key format** (lib/main.dart:221-222):
+       ```dart
+       String _dateKey(DateTime d) =>
+         '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+       ```
+
+    2. **Check composite keys**:
+       ```dart
+       final userId = getCurrentUserEmail();
+       final today = _dateKey(DateTime.now());
+       final key = '${userId}_$today';
+       print('Looking for data at key: $key');
+       ```
+
+    3. **Inspect box contents**:
+       ```dart
+       final allKeys = _dailyExerciseBox.keys.toList();
+       print('Exercise box keys: $allKeys');
+       for (final key in allKeys) {
+         print('$key: ${_dailyExerciseBox.get(key)}');
+       }
+       ```
+
+    4. **Verify data structure**:
+       ```dart
+       final raw = _dailyExerciseBox.get(key);
+       if (raw is Map) {
+         print('Steps: ${raw['steps']}');
+         print('Date: ${raw['date']}');
+       } else {
+         print('Invalid data type: ${raw.runtimeType}');
+       }
+       ```
+  </Accordion>
+</AccordionGroup>
+
+## Platform-Specific Issues
+
+<AccordionGroup>
+  <Accordion title="Android build fails with 'MultiDex' error">
+    **Symptom**: Build fails with "Cannot fit requested classes in a single dex file".
+
+    **Solutions**:
+
+    1. Enable MultiDex in `android/app/build.gradle`:
+       ```gradle
+       android {
+         defaultConfig {
+           multiDexEnabled true
+         }
+       }
+       
+       dependencies {
+         implementation 'androidx.multidex:multidex:2.0.1'
+       }
+       ```
+
+    2. Update Application class (if custom):
+       ```kotlin
+       import androidx.multidex.MultiDexApplication
+       
+       class MyApp : MultiDexApplication() {
+         // ...
+       }
+       ```
+  </Accordion>
+
+  <Accordion title="iOS app crashes on launch">
+    **Symptom**: App immediately crashes after launch on iOS.
+
+    **Solutions**:
+
+    1. Check Xcode console for error:
+       ```bash
+       flutter run --verbose
+       ```
+
+    2. Verify Info.plist is valid XML:
+       ```bash
+       plutil -lint ios/Runner/Info.plist
+       ```
+
+    3. Clean derived data:
+       ```bash
+       cd ios
+       rm -rf ~/Library/Developer/Xcode/DerivedData
+       flutter clean
+       pod install
+       ```
+
+    4. Check minimum iOS version:
+       - Vitu requires iOS 12.0+
+       - Update in `ios/Podfile` if needed
+  </Accordion>
+
+  <Accordion title="Web build size too large">
+    **Symptom**: Web build is slow to load, large bundle size.
+
+    **Solutions**:
+
+    1. Build in release mode:
+       ```bash
+       flutter build web --release
+       ```
+
+    2. Enable tree shaking:
+       ```bash
+       flutter build web --release --tree-shake-icons
+       ```
+
+    3. Split deferred loading (advanced):
+       ```dart
+       import 'heavy_screen.dart' deferred as heavy;
+       
+       // Later:
+       await heavy.loadLibrary();
+       Navigator.push(/* ... */);
+       ```
+  </Accordion>
+</AccordionGroup>
+
+## Runtime Errors
+
+<AccordionGroup>
+  <Accordion title="'setState() called after dispose()' error">
+    **Symptom**: Unhandled exception when updating state after navigation.
+
+    **Solutions**:
+
+    1. **Check mounted before setState**:
+       ```dart
+       if (mounted) {
+         setState(() {
+           // Update state
+         });
+       }
+       ```
+
+    2. **Cancel async operations in dispose**:
+       ```dart
+       @override
+       void dispose() {
+         _accelSub?.cancel();
+         _posSub?.cancel();
+         _timer?.cancel();
+         super.dispose();
+       }
+       ```
+
+    3. **Use State lifecycle properly**:
+       ```dart
+       Future<void> loadData() async {
+         final data = await fetchData();
+         if (!mounted) return;  // Exit if widget disposed
+         setState(() => _data = data);
+       }
+       ```
+  </Accordion>
+
+  <Accordion title="Memory leaks / app slowdown over time">
+    **Symptom**: App becomes sluggish after extended use, high memory usage.
+
+    **Solutions**:
+
+    1. **Dispose controllers** properly:
+       ```dart
+       late final AnimationController _controller;
+       
+       @override
+       void dispose() {
+         _controller.dispose();
+         super.dispose();
+       }
+       ```
+
+    2. **Cancel stream subscriptions**:
+       ```dart
+       StreamSubscription? _sub;
+       
+       @override
+       void dispose() {
+         _sub?.cancel();
+         super.dispose();
+       }
+       ```
+
+    3. **Use DevTools to profile**:
+       ```bash
+       flutter run --profile
+       # Open DevTools → Memory → Take snapshot
+       ```
+
+    4. **Limit list growth** (lib/main.dart:1796-1802):
+       ```dart
+       if (_cardioSpots.length > 60) {
+         _cardioSpots.removeAt(0);  // Keep only recent data
+       }
+       ```
+  </Accordion>
+</AccordionGroup>
+
+## Debugging Tips
+
+### Enable Verbose Logging
+
+```bash
+flutter run --verbose
+```
+
+### Check Logs by Platform
+
+**Android**:
+```bash
+adb logcat | grep flutter
+```
+
+**iOS**:
+```bash
+flutter logs
+```
+
+**All platforms**:
+```dart
+import 'package:flutter/foundation.dart';
+
+if (kDebugMode) {
+  debugPrint('Debug info: $variable');
+}
+```
+
+### Use Flutter DevTools
+
+```bash
+flutter pub global activate devtools
+flutter pub global run devtools
+```
+
+Features:
+- Widget Inspector
+- Memory Profiler
+- Performance Timeline
+- Network Monitor
+
+## Getting Help
+
+### Resources
+
+- **Flutter Docs**: https://docs.flutter.dev
+- **Gemini AI Docs**: https://ai.google.dev/docs
+- **Hive Docs**: https://docs.hivedb.dev
+- **Stack Overflow**: https://stackoverflow.com/questions/tagged/flutter
+
+### Reporting Issues
+
+When reporting bugs, include:
+1. Flutter version (`flutter --version`)
+2. Platform and OS version
+3. Full error stack trace
+4. Steps to reproduce
+5. Expected vs actual behavior
+
+### Debug Checklist
+
+- [ ] Run `flutter doctor` and fix all issues
+- [ ] Check all permissions are granted
+- [ ] Verify API keys are valid
+- [ ] Test on physical device (not just emulator)
+- [ ] Check network connectivity
+- [ ] Review logs for error messages
+- [ ] Try `flutter clean && flutter pub get`
+- [ ] Update to latest stable Flutter version

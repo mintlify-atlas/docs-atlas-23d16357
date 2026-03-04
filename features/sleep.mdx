@@ -1,0 +1,260 @@
+---
+title: Sleep Tracking
+description: Automatically detect sleep duration, rate sleep quality, and view weekly history
+---
+
+## Overview
+
+Vitu's Sleep feature automatically tracks when you sleep by monitoring when your phone's screen is off during nighttime hours (7:00 PM to 7:00 AM). It records sleep duration, allows you to rate your sleep quality with stars, and displays weekly trends in a simple bar chart.
+
+## How to Use
+
+<Steps>
+  <Step title="Automatic Detection">
+    Sleep tracking happens **automatically** when:
+    - The current time is between **19:00 (7:00 PM)** and **07:00 (7:00 AM)**
+    - You put your phone in sleep mode (screen off)
+    - The screen-off period lasts at least **10 minutes**
+    
+    No need to press any buttons—just go to sleep as usual.
+  </Step>
+
+  <Step title="Review Last Night's Sleep">
+    Open the Sleep (Sueño) screen to see:
+    - **"Anoche"** (Last night): Your most recent sleep duration in hours
+    - **Quality stars**: 1-5 stars showing auto-rated sleep quality (editable)
+  </Step>
+
+  <Step title="Rate Your Sleep Quality">
+    Tap the **star icons** under "Anoche" to manually adjust your quality rating:
+    - ⭐ (1 star): Very poor sleep
+    - ⭐⭐ (2 stars): Poor sleep
+    - ⭐⭐⭐ (3 stars): Average sleep
+    - ⭐⭐⭐⭐ (4 stars): Good sleep
+    - ⭐⭐⭐⭐⭐ (5 stars): Excellent sleep
+  </Step>
+
+  <Step title="View Weekly History">
+    Scroll down to see:
+    - **Bar chart**: Hours slept each day for the past 7 days
+    - **List of nights**: Recent sleep sessions with date, duration, and quality
+  </Step>
+
+  <Step title="Manually Add Sleep (Optional)">
+    Tap the **"+"** icon in the top-right corner to manually log a sleep session:
+    1. Choose your bedtime (e.g., 11:00 PM)
+    2. Choose your wake time (e.g., 7:00 AM)
+    3. The app calculates duration and assigns an initial quality rating
+  </Step>
+</Steps>
+
+## What Data is Tracked
+
+### Per Sleep Session
+
+- **Date**: Which night/day the sleep is attributed to
+- **Start time (hora_inicio)**: When you fell asleep (screen went off in the 19:00-07:00 window)
+- **End time (hora_fin)**: When you woke up (screen turned back on)
+- **Duration (duration_h)**: Total hours slept (in decimal format, e.g., 7.5 hours)
+- **Quality**: 1-5 star rating (auto-assigned initially, editable by user)
+
+### Weekly Summary
+
+The app stores sleep data for the **past 7 days**, allowing you to:
+- See daily sleep duration in a bar chart
+- Compare nights to identify patterns
+- Track quality ratings over time
+
+<Info>
+  Sleep data is attributed to the "night" it belongs to. For example, if you go to sleep at 11 PM on Monday and wake at 7 AM on Tuesday, it's logged as **Monday night's sleep**.
+</Info>
+
+## How Automatic Detection Works
+
+### The Sleep Window (19:00 - 07:00)
+
+Vitu only tracks sleep during these hours:
+- **Start window**: 7:00 PM (19:00) to 11:59 PM (23:59)
+- **End window**: 12:00 AM (00:00) to 7:00 AM (07:00)
+
+This prevents the app from counting daytime naps or brief screen-off moments as sleep.
+
+### Screen State Monitoring
+
+The app uses Flutter's `WidgetsBindingObserver` to detect when your app goes into the background (screen off):
+
+1. **Screen turns off** during the sleep window → Start timestamp is recorded
+2. **Screen turns back on** → End timestamp is recorded
+3. **Duration calculated** → If >= 10 minutes, it's logged as sleep
+4. **Quality auto-assigned** based on duration:
+   - < 6 hours → ⭐⭐ (2 stars, poor)
+   - 6-8 hours → ⭐⭐⭐⭐ (4 stars, good)
+   - > 8 hours → ⭐⭐⭐⭐⭐ (5 stars, excellent)
+
+<Note>
+  The **10-minute minimum** prevents false positives from quickly checking your phone at night.
+</Note>
+
+### Time Clipping
+
+If you fall asleep or wake outside the 19:00-07:00 window, the app "clips" the time:
+
+- **Fell asleep at 6:00 PM** → Clipped to 7:00 PM (19:00)
+- **Woke at 9:00 AM** → Clipped to 7:00 AM (07:00)
+
+This ensures only nighttime sleep is counted, not daytime phone inactivity.
+
+### Daily Cutoff at 7:00 AM
+
+At 7:00 AM each day:
+- Any ongoing screen-off period is finalized and saved
+- A new day's entry is created (starting at 0 hours)
+- The app resets to track the next night's sleep
+
+## How Results Are Displayed
+
+### Last Night Summary Card
+
+At the top of the screen, a card shows:
+- **Clock icon** in your theme color
+- **"Anoche: X.X h"** (e.g., "Anoche: 7.2 h")
+- **5 star icons** below, where filled stars indicate your quality rating
+
+Tap any star to change the rating (e.g., tap the 3rd star to set quality to 3).
+
+### Weekly Bar Chart ("Horas por día")
+
+A bar chart displays:
+- **7 bars** representing the past 7 days (Monday through Sunday)
+- **Height** of each bar = hours slept that night (max scale: 12 hours)
+- **Day labels**: L, M, X, J, V, S, D
+- **Color**: Your app's theme seed color
+
+This makes it easy to spot:
+- Consistent sleep patterns (similar bar heights)
+- Sleep deprivation (short bars)
+- Catch-up sleep (one tall bar after several short ones)
+
+### Recent Sleep List
+
+Below the chart, a list shows each of the past 7 nights with:
+- **Moon icon**
+- **Date and duration** (e.g., "2026-03-03: 6.8 h")
+- **Star rating** below the date
+- **Chevron arrow** (placeholder for future detail view)
+
+### Sleep Tips Card
+
+At the bottom, a helpful tips card suggests:
+- **"Evita pantallas 1 h antes"** (Avoid screens 1 hour before bed)
+- **"Rutina relajante"** (Relaxing routine)
+
+These are static reminders to improve sleep hygiene.
+
+## Tips for Best Results
+
+### Keep Your Phone Nearby
+
+For automatic tracking to work:
+- Place your phone on your nightstand or near your bed
+- Ensure the screen can turn off (no always-on display mode)
+- The app doesn't need to be open; it monitors in the background
+
+<Tip>
+  The app uses lifecycle observers, so it can detect sleep even when running in the background—but it works best if you've opened the Sleep screen at least once.
+</Tip>
+
+### Charge Your Phone at Night
+
+Since tracking relies on your phone being on:
+- Plug in your phone before bed
+- Make sure it won't die overnight (low battery could interrupt tracking)
+
+### Consistent Sleep Schedule
+
+For the most accurate data:
+- Try to sleep during the 19:00-07:00 window
+- If you're a night owl (sleep 2 AM - 10 AM), automatic detection may miss part of your sleep after 7 AM
+
+### Manually Log Non-Standard Sleep
+
+If you:
+- Slept outside the 19:00-07:00 window
+- Forgot to charge your phone
+- Want to log a nap (though this isn't the intended use)
+
+Use the **"+"** button to manually add a sleep session with custom times.
+
+### Adjust Quality Ratings
+
+The auto-assigned quality is based only on duration. You might want to manually adjust if:
+- You slept 8 hours but woke up frequently (lower the rating)
+- You slept 5.5 hours but felt well-rested (raise the rating)
+- External factors affected sleep (noise, stress, etc.)
+
+<Warning>
+  Quality ratings are **subjective**. Use them as a personal reference, not a medical metric.
+</Warning>
+
+## Understanding Your Sleep Data
+
+### Recommended Sleep Duration
+
+General guidelines for adults:
+- **7-9 hours**: Optimal for most adults
+- **< 6 hours**: Sleep deprivation; may affect health and performance
+- **> 9 hours**: Oversleeping; may indicate underlying issues or recovery needs
+
+### Reading the Bar Chart
+
+- **Consistent 7-9 hour bars**: Excellent! You have a healthy sleep routine
+- **Fluctuating bar heights**: Inconsistent schedule; try to stabilize bedtime
+- **Mostly short bars (< 6 hours)**: Chronic sleep deprivation; prioritize more rest
+- **One tall bar after short ones**: "Catch-up sleep" on weekends; aim for daily consistency
+
+### Quality vs. Duration
+
+Pay attention to both:
+- **High duration + low quality** → You're in bed long but not sleeping well (check sleep hygiene)
+- **Low duration + high quality** → You sleep well but not enough (go to bed earlier)
+- **High duration + high quality** → Ideal!
+
+## Troubleshooting
+
+### No Sleep Detected
+
+If the app shows 0 hours:
+- **Check the time window**: Did you sleep outside 19:00-07:00?
+- **Screen stayed on**: Was your phone screen active all night (e.g., video playing)?
+- **App permissions**: Ensure the app isn't force-stopped by battery optimization
+- **First-time use**: The feature only starts tracking once you open the Sleep screen at least once
+
+### Inaccurate Duration
+
+If the logged hours seem wrong:
+- **Multiple wake-ups**: The app counts the last screen-on as "wake time"—if you checked your phone at 3 AM, it may clip your sleep early
+- **Manual adjustment needed**: Use the "+" button to log the correct start/end times
+
+### Can't Change Quality Rating
+
+Ensure you're tapping the stars under "Anoche" (last night). The stars in the history list are read-only (for now).
+
+### Weekly Chart Shows Gaps
+
+If some days show 0 hours:
+- You didn't sleep (or didn't have your phone nearby)
+- The app wasn't running during that night
+- Data was cleared or you switched accounts
+
+Just continue using the app—new data will fill in going forward.
+
+### Sleep Counted During the Day
+
+This shouldn't happen if you're awake during daytime. If it does:
+- Ensure your device time zone is correct
+- Check that the app's 19:00-07:00 window aligns with your local time
+- If you work night shifts, the app may not be suitable for your schedule
+
+---
+
+**Next Steps**: Complete your wellness journey by tracking [nutrition](/features/nutrition), [exercise](/features/exercise), and [hydration](/features/hydration)!

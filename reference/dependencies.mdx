@@ -1,0 +1,518 @@
+---
+title: Dependencies
+description: Complete list of packages and libraries used in Vitu
+---
+
+## Overview
+
+Vitu uses carefully selected Flutter packages to provide wellness tracking features including AI-powered nutrition analysis, activity tracking, data visualization, and local storage.
+
+## SDK Requirements
+
+### Dart SDK
+
+```yaml
+environment:
+  sdk: ^3.10.8
+```
+
+**Purpose**: Minimum Dart SDK version required for language features and compatibility.
+
+**Why This Version**: 
+- Dart 3.10.8 provides null safety, enhanced type checking, and modern language features
+- Required for compatibility with Flutter 3.x and Material 3 components
+
+## Production Dependencies
+
+### Core Flutter
+
+#### flutter
+```yaml
+flutter:
+  sdk: flutter
+```
+
+**Purpose**: Core Flutter framework for building cross-platform UIs.
+
+**Usage in Vitu**:
+- Material Design widgets (Scaffold, AppBar, BottomNavigationBar)
+- State management (StatefulWidget, StatelessWidget)
+- Navigation (Navigator, MaterialPageRoute)
+- Animations (AnimationController, AnimatedSwitcher)
+
+#### cupertino_icons
+```yaml
+cupertino_icons: ^1.0.8
+```
+
+**Purpose**: iOS-style icons for Cupertino design language.
+
+**Version**: 1.0.8 (latest stable)
+
+**Usage in Vitu**:
+- Provides iOS-style icons for cross-platform consistency
+- Used in navigation and UI elements
+
+### Media & File Management
+
+#### image_picker
+```yaml
+image_picker: ^1.1.2
+```
+
+**Purpose**: Allows users to select images from camera or gallery.
+
+**Version**: 1.1.2
+
+**Usage in Vitu**:
+- Capturing food photos for AI analysis (lib/main.dart:534-569)
+- Gallery selection for analyzing saved photos
+- Both camera and gallery sources supported
+
+**Platform Requirements**:
+- **iOS**: Requires `NSCameraUsageDescription` and `NSPhotoLibraryUsageDescription` in Info.plist
+- **Android**: Requires camera and storage permissions in AndroidManifest.xml
+
+**Code Example**:
+```dart
+final ImagePicker picker = ImagePicker();
+final XFile? xfile = await picker.pickImage(
+  source: ImageSource.camera,
+  imageQuality: 85,
+);
+```
+
+#### path_provider
+```yaml
+path_provider: ^2.1.4
+```
+
+**Purpose**: Provides platform-specific file system paths.
+
+**Version**: 2.1.4
+
+**Usage in Vitu**:
+- Storing captured food photos (lib/main.dart:550-554)
+- Accessing app documents directory
+- Persistent local file storage
+
+**Code Example**:
+```dart
+final dir = await getApplicationDocumentsDirectory();
+final path = '${dir.path}/vitu_food_$timestamp.jpg';
+```
+
+### Data Visualization
+
+#### fl_chart
+```yaml
+fl_chart: ^0.68.0
+```
+
+**Purpose**: Beautiful, animated charts for data visualization.
+
+**Version**: 0.68.0
+
+**Usage in Vitu**:
+- **PieChart**: Nutritional macros breakdown (protein/carbs/fat) - lib/main.dart:1060-1070
+- **LineChart**: Real-time exercise activity monitoring - lib/main.dart:2242-2308
+- **BarChart**: Weekly step count and hydration trends - lib/main.dart:2344-2430
+
+**Chart Types Used**:
+- `PieChart` - Nutrient distribution
+- `LineChart` - Cardio activity over time
+- `BarChart` - Weekly activity summaries
+
+**Features**:
+- Smooth animations (swapAnimationDuration)
+- Custom colors and gradients
+- Touch interactions
+- Responsive sizing
+
+### Local Storage
+
+#### shared_preferences
+```yaml
+shared_preferences: ^2.2.3
+```
+
+**Purpose**: Simple key-value storage for app preferences.
+
+**Version**: 2.2.3
+
+**Usage in Vitu**:
+- Lightweight preference storage
+- Compatibility layer (primary storage is Hive)
+
+#### hive
+```yaml
+hive: ^2.2.3
+```
+
+**Purpose**: Fast, lightweight NoSQL database for Flutter.
+
+**Version**: 2.2.3
+
+**Usage in Vitu**:
+- Core data storage engine
+- Stores user profiles, settings, and activity data
+- No backend required - 100% local
+
+**Boxes Used**:
+- `users` - User profiles and authentication
+- `user_settings` - Theme and preferences
+- `daily_exercise` - Step counts and activities
+- `hydration_logs` - Water intake events
+- `daily_hydration_summary` - Daily summaries
+
+**Why Hive?**
+- Fast read/write performance
+- No SQL schema required
+- Type-safe with code generation
+- Cross-platform support
+- Offline-first architecture
+
+#### hive_flutter
+```yaml
+hive_flutter: ^1.1.0
+```
+
+**Purpose**: Flutter-specific Hive extensions and initialization.
+
+**Version**: 1.1.0
+
+**Usage in Vitu**:
+- Hive initialization (lib/main.dart:23-28)
+- Flutter-optimized storage paths
+- Box management helpers
+
+**Initialization**:
+```dart
+await Hive.initFlutter();
+await Hive.openBox('users');
+await Hive.openBox('user_settings');
+await Hive.openBox('daily_exercise');
+await Hive.openBox('hydration_logs');
+await Hive.openBox('daily_hydration_summary');
+```
+
+### Activity & Sensors
+
+#### geolocator
+```yaml
+geolocator: ^12.0.0
+```
+
+**Purpose**: Location tracking for activity detection and speed calculation.
+
+**Version**: 12.0.0
+
+**Usage in Vitu**:
+- Detecting movement speed (km/h) - lib/main.dart:1773-1791
+- Preventing step counting while in vehicle (speed > 15 km/h)
+- Activity classification (walking, running, vehicle)
+- Location permissions management
+
+**Permission Handling**:
+```dart
+bool enabled = await Geolocator.isLocationServiceEnabled();
+LocationPermission perm = await Geolocator.checkPermission();
+if (perm == LocationPermission.denied) {
+  perm = await Geolocator.requestPermission();
+}
+```
+
+**Why This Package?**
+- Accurate GPS positioning
+- Continuous position stream
+- Built-in permission handling
+- Cross-platform support
+
+#### sensors_plus
+```yaml
+sensors_plus: ^5.0.0
+```
+
+**Purpose**: Access to device sensors (accelerometer, gyroscope).
+
+**Version**: 5.0.0
+
+**Usage in Vitu**:
+- Step detection via accelerometer - lib/main.dart:1806-1848
+- Movement magnitude calculation
+- Real-time activity monitoring
+
+**Implementation**:
+```dart
+_accelSub = userAccelerometerEventStream().listen((e) {
+  final mag = math.sqrt(e.x * e.x + e.y * e.y + e.z * e.z);
+  if (mag > threshold) {
+    // Step detected
+  }
+});
+```
+
+**Detection Thresholds**:
+- Walking: magnitude > 0.9
+- Running: magnitude > 1.4
+- Debounce: 320-450ms between steps
+
+**Note**: Replaced `activity_recognition_flutter` due to AGP 8+ incompatibility (see pubspec.yaml:24).
+
+### AI Integration
+
+#### google_generative_ai
+```yaml
+google_generative_ai: ^0.4.0
+```
+
+**Purpose**: Google Gemini AI for image analysis and content generation.
+
+**Version**: 0.4.0 (downgraded from 0.5.0 for stability)
+
+**Usage in Vitu**:
+1. **Food Analysis** - Analyzes photos to extract:
+   - Dish name
+   - Estimated calories (kcal)
+   - Macronutrients (protein, carbs, fat)
+   - Personalized based on user profile (age, weight, height, gender)
+
+2. **Recipe Recommendations** - Generates 3 healthy recipes:
+   - Ingredients list
+   - Preparation time
+   - Difficulty level
+   - Nutritional estimates
+   - Health benefits explanation
+
+3. **Workout Suggestions** - Creates exercise routines:
+   - Personalized to user fitness level
+   - 4 sessions per routine type (Strength/Yoga/Stretching)
+   - Detailed exercise breakdowns
+
+**Model Used**: `gemini-2.5-flash`
+
+**API Key Configuration**:
+```dart
+const apiKey = 'AIzaSyCEwgwToG9cfPvf2wzNHGOhSeXCLafD1ms';
+_geminiModel = GenerativeModel(
+  model: 'gemini-2.5-flash',
+  apiKey: apiKey,
+);
+```
+
+**Security Warning**: 
+- API key is hardcoded in source (lib/main.dart:489)
+- Should use environment variables or secure storage in production
+- Generate new key at: https://aistudio.google.com/app/apikey
+
+**Personalization**:
+```dart
+String buildUserPromptPersonalization() {
+  final u = getCurrentUser();
+  return 'User data: age ${u.edad}, weight ${u.peso} kg, height ${u.altura} cm, gender ${u.genero}. Personalize recommendations.';
+}
+```
+
+**Error Handling**:
+- `GenerativeAIException` - API errors (invalid key, rate limits)
+- `SocketException` - Network connectivity issues
+- `TimeoutException` - 20-second timeout on requests
+
+### Monitoring
+
+#### screen_state
+```yaml
+screen_state: 5.0.0
+```
+
+**Purpose**: Detect screen on/off events for sleep tracking.
+
+**Version**: 5.0.0 (exact version, no caret)
+
+**Usage in Vitu**:
+- Automatic sleep detection when screen turns off (19:00-07:00)
+- Sleep duration calculation
+- Automatic quality rating based on hours slept
+
+**Note**: Current implementation uses `WidgetsBindingObserver` for app lifecycle (paused/resumed) rather than direct screen_state integration.
+
+## Development Dependencies
+
+### flutter_test
+```yaml
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+```
+
+**Purpose**: Unit and widget testing framework.
+
+**Usage**: Testing infrastructure (not currently implemented).
+
+### flutter_lints
+```yaml
+flutter_lints: ^6.0.0
+```
+
+**Purpose**: Recommended linting rules for Flutter projects.
+
+**Version**: 6.0.0
+
+**Configuration**: Defined in `analysis_options.yaml`.
+
+**Benefits**:
+- Code quality enforcement
+- Best practices recommendations
+- Catch common mistakes
+- Consistent code style
+
+### flutter_launcher_icons
+```yaml
+flutter_launcher_icons: ^0.14.4
+```
+
+**Purpose**: Automatically generates app launcher icons for all platforms.
+
+**Version**: 0.14.4
+
+**Configuration**:
+```yaml
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/WhatsApp Image 2026-02-16 at 12.16.07 PM.jpeg"
+  remove_alpha_ios: true
+```
+
+**Usage**: Run `flutter pub run flutter_launcher_icons` after configuration.
+
+**Platforms Supported**:
+- Android (adaptive icons)
+- iOS (app icon set)
+- Automatically handles all required sizes
+
+## Dependency Version Constraints
+
+### Constraint Types
+
+| Constraint | Example | Meaning |
+|------------|---------|----------|
+| Caret (^) | `^1.0.8` | Compatible with 1.x.x (1.0.8 ≤ version < 2.0.0) |
+| Exact | `5.0.0` | Exact version only |
+| Range | `>=1.0.0 <2.0.0` | Specified range |
+
+### Version Strategy
+
+- **Core packages** (flutter, sensors_plus, geolocator): Use caret (^) for flexibility
+- **Critical packages** (screen_state): Use exact version for stability
+- **AI packages** (google_generative_ai): Pinned to 0.4.0 (downgraded from 0.5.0)
+
+## Removed Dependencies
+
+### activity_recognition_flutter
+```yaml
+# Removed due to AGP 8+ incompatibility
+# activity_recognition_flutter: ^4.2.0
+```
+
+**Reason**: Incompatible with Android Gradle Plugin 8+
+
+**Replacement**: Combination of `geolocator` + `sensors_plus` for activity detection
+
+**Migration Notes**:
+- Manual activity classification using speed and accelerometer data
+- Custom thresholds for walking/running/vehicle detection
+- See lib/main.dart:1633 for ActivityKind enum
+
+## Assets Configuration
+
+```yaml
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/WhatsApp Image 2026-02-16 at 12.16.07 PM.jpeg
+```
+
+**Purpose**: 
+- Material Design icon set
+- App launcher icon source image
+
+## Installation
+
+### Get All Dependencies
+```bash
+flutter pub get
+```
+
+### Update Dependencies
+```bash
+flutter pub upgrade
+```
+
+### Check Outdated
+```bash
+flutter pub outdated
+```
+
+## Platform-Specific Setup
+
+### Android Permissions
+
+Add to `android/app/src/main/AndroidManifest.xml`:
+```xml
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<uses-permission android:name="android.permission.INTERNET" />
+```
+
+### iOS Permissions
+
+Add to `ios/Runner/Info.plist`:
+```xml
+<key>NSCameraUsageDescription</key>
+<string>Take photos of food for nutritional analysis</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>Select photos from gallery for analysis</string>
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>Track activity and calculate walking/running speed</string>
+```
+
+## Troubleshooting
+
+### Build Errors
+
+If you encounter build issues:
+
+1. Clean build cache:
+   ```bash
+   flutter clean
+   flutter pub get
+   ```
+
+2. Check Flutter/Dart versions:
+   ```bash
+   flutter --version
+   dart --version
+   ```
+
+3. Update Flutter:
+   ```bash
+   flutter upgrade
+   ```
+
+### Gemini API Issues
+
+- Verify API key is valid
+- Check internet connectivity
+- Monitor rate limits (free tier: 60 requests/minute)
+- Generate new key at: https://aistudio.google.com/app/apikey
+
+### Hive Migration
+
+If data schema changes:
+```dart
+// Delete box to reset data
+await Hive.deleteBoxFromDisk('box_name');
+await Hive.openBox('box_name');
+```

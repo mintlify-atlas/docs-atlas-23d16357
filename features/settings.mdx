@@ -1,0 +1,275 @@
+---
+title: 'Settings'
+description: 'Customize your Vitu experience with themes, colors, fonts, and personal data management'
+---
+
+## Overview
+
+Vitu offers comprehensive settings to personalize your wellness app experience. All settings are stored locally in the `user_settings` Hive box and are tied to your user account.
+
+## Accessing Settings
+
+To access your settings:
+
+1. Tap the **Ajustes** (Settings) icon in the bottom navigation bar
+2. The settings screen displays all customization options organized into sections
+
+## Appearance Settings
+
+### Theme Mode
+
+Customize your visual experience with light or dark mode.
+
+<Steps>
+  <Step title="Navigate to Apariencia">
+    Find the **Apariencia** (Appearance) section with the palette icon.
+  </Step>
+
+  <Step title="Choose your theme">
+    Use the segmented button to select:
+    - **Claro** (Light): Light theme with white/light gray backgrounds
+    - **Oscuro** (Dark): Dark theme with dark backgrounds
+  </Step>
+
+  <Step title="Automatic save">
+    Your selection is saved automatically and applied immediately.
+  </Step>
+</Steps>
+
+**Storage Key**: `brightness` (values: `'light'` or `'dark'`)
+
+### Color Scheme
+
+Personalize your app with custom seed colors that influence the entire color palette.
+
+<Steps>
+  <Step title="View current color">
+    Your current seed color is displayed in a large circular preview with a gradient.
+  </Step>
+
+  <Step title="Select a color">
+    Choose from 6 preset color options:
+    - **Amarillo** (Yellow): `#FFECB3`
+    - **Lima** (Lime): `#C5E1A5`
+    - **Verde** (Green): `#A5D6A7`
+    - **Azul** (Blue): `#90CAF9`
+    - **Rojo** (Red): `#EF9A9A`
+    - **Morado** (Purple): `#CE93D8`
+  </Step>
+
+  <Step title="Apply the color">
+    Tap on any color circle. The selected color shows a checkmark and applies immediately across the app.
+  </Step>
+</Steps>
+
+**Storage Key**: `seedColor` (stored as ARGB integer)
+
+<Tip>
+  The seed color influences gradients, button colors, progress indicators, and accent colors throughout the app.
+</Tip>
+
+## Typography and Accessibility
+
+### Font Family
+
+Choose between system font and a custom serif font.
+
+<Steps>
+  <Step title="Find Tipografía section">
+    Scroll to **Tipografía y accesibilidad** (Typography and Accessibility).
+  </Step>
+
+  <Step title="Select font type">
+    Use the segmented button:
+    - **Sistema** (System): Use your device's default font
+    - **Personalizada** (Custom): Use a serif font
+  </Step>
+</Steps>
+
+**Storage Key**: `fontFamily` (values: `null` for system, `'serif'` for custom)
+
+### Additional Accessibility Options
+
+The settings screen also displays:
+- **Tamaño de texto** (Text Size): Slider for adjusting text scale (currently display-only)
+- **Modo alto contraste** (High Contrast Mode): Toggle for enhanced contrast (currently display-only)
+
+## Personal Data Management
+
+### Editing Height and Weight
+
+Your height and weight affect hydration goal calculations and AI-powered recommendations.
+
+<Steps>
+  <Step title="Navigate to Datos personales">
+    Find the **Datos personales** (Personal Data) section with the badge icon.
+  </Step>
+
+  <Step title="Update your measurements">
+    - **Altura (cm)**: Enter your height in centimeters
+    - **Peso (kg)**: Enter your weight in kilograms
+  </Step>
+
+  <Step title="Save changes">
+    Tap the **Guardar** (Save) button to update your profile.
+  </Step>
+
+  <Step title="Automatic recalculation">
+    Your daily hydration goal (`metaHydratationMl`) is automatically recalculated based on your new weight, age, and gender.
+  </Step>
+</Steps>
+
+<Note>
+  The hydration goal calculation formula:
+  - Base: `weight (kg) × 35 ml`
+  - Adjusted for age: -10% if under 14 years, -5% if 65+
+  - Adjusted for gender: +200ml for males
+  - Clamped between 1200ml and 4500ml
+</Note>
+
+## Hydration Goal Customization
+
+Your hydration goal is automatically calculated but can be influenced by updating your personal data.
+
+**Storage Key**: `metaHydratationMl` (Double, in milliliters)
+
+**Default Calculation** (from `/home/daytona/workspace/source/lib/main.dart:202`):
+```dart
+final base = (weight > 0 ? weight : 70.0) * 35.0;
+double adjusted = base;
+if (age < 14) adjusted = base * 0.9;
+if (age >= 65) adjusted = base * 0.95;
+if (gender == 'masculino') adjusted += 200;
+return adjusted.clamp(1200.0, 4500.0);
+```
+
+## Security Settings
+
+### Password Change
+
+Update your account password for enhanced security.
+
+<Steps>
+  <Step title="Navigate to Seguridad">
+    Find the **Seguridad** (Security) section.
+  </Step>
+
+  <Step title="Tap Cambiar contraseña">
+    Tap **Cambiar contraseña** (Change Password) with the lock icon.
+  </Step>
+
+  <Step title="Enter password details">
+    In the dialog:
+    - **Ingresa contraseña actual** (Current Password): Your existing password
+    - **Nueva contraseña** (New Password): Minimum 6 characters
+    - **Confirmar** (Confirm): Re-enter new password
+  </Step>
+
+  <Step title="Save changes">
+    Tap **Guardar** (Save). The system validates:
+    - Current password matches your account
+    - New password is at least 6 characters
+    - New password matches confirmation
+  </Step>
+</Steps>
+
+<Warning>
+  If you enter the wrong current password, you'll see: "Contraseña actual incorrecta" (Current password incorrect).
+</Warning>
+
+## Privacy and Security
+
+### Location Tracking
+
+Control whether Vitu can access your GPS location for location-based wellness features.
+
+<Steps>
+  <Step title="Find Privacidad section">
+    Scroll to **Privacidad y seguridad** (Privacy and Security).
+  </Step>
+
+  <Step title="Toggle location access">
+    Switch on/off **Seguir ubicación** (Follow Location).
+  </Step>
+</Steps>
+
+**Storage Key**: `followLocation` (Boolean)
+
+**Description**: "Permite acceso a GPS para funciones locales" (Allows GPS access for local features)
+
+### Other Privacy Options
+
+- **Compartir datos anónimos** (Share Anonymous Data): Currently display-only
+- **Gestionar permisos** (Manage Permissions): Access to camera, microphone, etc.
+
+## Notifications Settings
+
+Configure notification preferences:
+
+- **Activar push** (Enable Push): Toggle push notifications
+- **Recordatorios diarios** (Daily Reminders): Receive daily wellness reminders
+- **Alertas de salud** (Health Alerts): Location-based health alerts
+- **Frecuencia de notificaciones** (Notification Frequency): Slider to adjust frequency
+
+<Note>
+  Some notification settings are currently display-only and don't affect actual behavior.
+</Note>
+
+## General Settings
+
+### Language Selection
+
+Select your preferred language:
+
+- **Español** (Spanish): Default
+- **English**: Available option
+
+<Note>
+  Language selection is currently display-only. The app is primarily in Spanish.
+</Note>
+
+## Settings Storage
+
+All settings are stored in the **Hive** `user_settings` box:
+
+**Box Name**: `user_settings`
+**Key Format**: `settings:{userId}`
+
+### UserSettings Data Structure
+
+```dart
+class UserSettings {
+  final String userId;          // User's email
+  final String? brightness;     // 'light' or 'dark'
+  final int? seedColor;         // ARGB color value
+  final String? fontFamily;     // null or 'serif'
+  final bool? followLocation;   // GPS permission
+  final double? metaHydratationMl; // Daily hydration goal
+}
+```
+
+## Settings Persistence
+
+- Settings are automatically saved when you make changes
+- Settings persist across app sessions
+- Settings are tied to your user account (email)
+- Multiple users on the same device have separate settings
+
+## About Section
+
+View app information:
+
+- **Versión**: 1.2.0
+- **Última actualización**: 2024
+- **Política de privacidad** (Privacy Policy): Tap to view
+- **Términos de servicio** (Terms of Service): Tap to view
+
+## Resetting Settings
+
+To reset settings to defaults:
+
+1. Log out of your account (this preserves your data)
+2. Log back in
+3. Settings will use default values until you customize them again
+
+Alternatively, updating your personal data (height/weight) will recalculate derived settings like hydration goals.

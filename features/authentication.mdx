@@ -1,0 +1,162 @@
+---
+title: 'Authentication'
+description: 'Learn how to create an account, log in, and manage your profile in Vitu'
+---
+
+## Overview
+
+Vitu uses local authentication with Hive storage to manage user accounts. All user data is stored locally on your device, ensuring privacy and offline access.
+
+## Creating an Account
+
+To get started with Vitu, you'll need to create an account with your personal information.
+
+<Steps>
+  <Step title="Open the registration screen">
+    When you first launch Vitu, you'll see the login screen. Tap the **Registrarse** (Register) tab at the top.
+  </Step>
+
+  <Step title="Enter your personal information">
+    Fill in all required fields:
+    - **Nombre** (First Name)
+    - **Apellido** (Last Name)
+    - **Género** (Gender): Select from Masculino, Femenino, or Otro
+    - **Edad** (Age): Enter your age in years
+    - **Altura** (Height): Enter your height in centimeters (cm)
+    - **Peso** (Weight): Enter your weight in kilograms (kg)
+  </Step>
+
+  <Step title="Set up your credentials">
+    Create your login credentials:
+    - **Correo** (Email): Enter a valid email address
+    - **Contraseña** (Password): Must be at least 6 characters
+    - **Confirmar contraseña** (Confirm Password): Re-enter your password
+  </Step>
+
+  <Step title="Complete registration">
+    Tap the **Registrarse** button to create your account. You'll be automatically logged in and taken to the home screen.
+  </Step>
+</Steps>
+
+<Note>
+  Your height, weight, age, and gender are used to personalize your wellness recommendations and calculate your daily hydration goals.
+</Note>
+
+## User Profile Data
+
+Vitu collects and stores the following user profile information locally:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `nombre` | String | First name |
+| `apellido` | String | Last name |
+| `genero` | String | Gender (Masculino, Femenino, Otro) |
+| `edad` | Integer | Age in years |
+| `altura` | Double | Height in centimeters |
+| `peso` | Double | Weight in kilograms |
+| `correo` | String | Email address (used as user ID) |
+| `contrasena` | String | Password (stored locally) |
+
+### Optional Settings
+
+Additional profile settings that can be configured:
+
+- `brightness`: Theme preference ('light' or 'dark')
+- `seedColor`: Custom color scheme (ARGB integer)
+- `fontFamily`: Font preference (null for system font, or 'serif')
+- `followLocation`: GPS tracking permission for location-based features
+
+## Logging In
+
+If you already have an account, you can log in to access your wellness data.
+
+<Steps>
+  <Step title="Navigate to login">
+    On the login screen, ensure you're on the **Iniciar sesión** (Login) tab.
+  </Step>
+
+  <Step title="Enter your credentials">
+    - **Correo**: Enter your registered email address
+    - **Contraseña**: Enter your password
+    
+    Tap the eye icon to show/hide your password as you type.
+  </Step>
+
+  <Step title="Sign in">
+    Tap the **Iniciar Sesión** button. If your credentials are correct, you'll be taken to the home screen.
+  </Step>
+</Steps>
+
+<Tip>
+  Vitu validates your email format (must contain @) before submission. Make sure you enter the same email you used during registration.
+</Tip>
+
+## Local Storage
+
+All authentication data is stored locally using **Hive**, a lightweight and fast key-value database:
+
+- **Storage Box**: `users`
+- **User Key Format**: `user:{email}`
+- **Current User Key**: `currentUserEmail`
+
+This means:
+- Your data never leaves your device
+- No internet connection required after setup
+- Full privacy and control over your information
+
+## Password Requirements
+
+- Minimum length: 6 characters
+- No special character requirements
+- Stored locally (not hashed in current implementation)
+
+<Warning>
+  Passwords are stored in plain text locally. Keep your device secure with a device lock screen.
+</Warning>
+
+## Logout Process
+
+To log out of your Vitu account:
+
+<Steps>
+  <Step title="Navigate to settings">
+    Tap the **Ajustes** (Settings) icon in the bottom navigation bar.
+  </Step>
+
+  <Step title="Find the security section">
+    Scroll down to the **Seguridad** (Security) section.
+  </Step>
+
+  <Step title="Tap logout">
+    Tap the **Cerrar sesión** (Logout) option with the red logout icon.
+  </Step>
+
+  <Step title="Confirm logout">
+    You'll be immediately logged out and returned to the login screen. Your data remains stored locally on the device.
+  </Step>
+</Steps>
+
+## Account Recovery
+
+Currently, Vitu does not support password recovery since all data is stored locally. If you forget your password:
+
+1. You'll need to create a new account with a different email
+2. Your previous account data will remain on the device but will be inaccessible
+
+<Tip>
+  Keep your password in a secure location to avoid account lockout.
+</Tip>
+
+## Multiple Devices
+
+Since authentication is local:
+- Each device maintains its own separate account data
+- There is no account syncing between devices
+- You can create the same account on multiple devices, but data won't sync
+
+## Data Persistence
+
+Your account data persists across app sessions:
+- Closing the app keeps you logged in
+- Restarting your device keeps you logged in
+- Only manual logout or app data deletion will clear your session

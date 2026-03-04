@@ -1,0 +1,394 @@
+---
+title: Adding features
+description: Learn how to extend Vitu with new wellness tracking features
+---
+
+This guide shows you how to add new features to Vitu by following the existing architectural patterns.
+
+## Overview
+
+Vitu uses a single-file architecture (`main.dart`, 6,698 lines) with all screens, models, and logic in one place. While this is unconventional, it works well for this app's scope and makes it easy to understand the entire codebase at once.
+
+When adding a new feature (e.g., "meditation tracker" or "mood journal"), follow these steps:
+
+<Steps>
+  <Step title="Create a new Hive box">
+    Add your box in the `main()` function where other boxes are initialized.
+
+    ```dart
+    // main.dart:21-29
+    Future<void> main() async {
+      WidgetsFlutterBinding.ensureInitialized();
+      await Hive.initFlutter();
+      await Hive.openBox('users');
+      await Hive.openBox('user_settings');
+      await Hive.openBox('daily_exercise');
+      await Hive.openBox('hydration_logs');
+      await Hive.openBox('daily_hydration_summary');
+      await Hive.openBox('daily_meditation'); // NEW: Add your box here
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      runApp(const MyApp());
+    }
+    ```
+  </Step>
+
+  <Step title="Create a getter for your box">
+    Add a box accessor near the other getters (around line 127).
+
+    ```dart
+    Box get _meditationBox => Hive.box('daily_meditation');
+    ```
+  </Step>
+
+  <Step title="Define your data model (optional)">
+    If your feature needs structured data, create a model class similar to `User` or `UserSettings`.
+
+    ```dart
+    class MeditationSession {
+      final String userId;
+      final DateTime startTime;
+      final DateTime endTime;
+      final String technique; // e.g., "breathing", "guided", "mantra"
+      final int rating; // 1-5 stars
+      
+      const MeditationSession({
+        required this.userId,
+        required this.startTime,
+        required this.endTime,
+        required this.technique,
+        required this.rating,
+      });
+      
+      Map<String, dynamic> toMap() => {
+        'userId': userId,
+        'startTime': startTime.toIso8601String(),
+        'endTime': endTime.toIso8601String(),
+        'technique': technique,
+        'rating': rating,
+      };
+      
+      factory MeditationSession.fromMap(Map map) => MeditationSession(
+        userId: '${map['userId'] ?? ''}',
+        startTime: DateTime.parse('${map['startTime']}'),
+        endTime: DateTime.parse('${map['endTime']}'),
+        technique: '${map['technique'] ?? 'breathing'}',
+        rating: (map['rating'] is int) ? map['rating'] : 3,
+      );
+    }
+    ```
+  </Step>
+
+  <Step title="Create a StatefulWidget screen">
+    Add your screen class following the pattern of existing screens like `HydrationScreen` or `SleepScreen`.
+
+    ```dart
+    class MeditationScreen extends StatefulWidget {
+      const MeditationScreen({super.key});
+      
+      @override
+      State<MeditationScreen> createState() => _MeditationScreenState();
+    }
+    
+    class _MeditationScreenState extends State<MeditationScreen> {
+      Timer? _sessionTimer;
+      DateTime? _sessionStart;
+      bool _isActive = false;
+      
+      @override
+      void initState() {
+        super.initState();
+        _loadData();
+      }
+      
+      void _loadData() async {
+        final user = getCurrentUser();
+        if (user == null) return;
+        
+        final today = DateTime.now();
+        final key = '${user.correo}_${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+        
+        final data = _meditationBox.get(key);
+        if (data != null && mounted) {
+          setState(() {
+            // Load your data here
+          });
+        }
+      }
+      
+      void _startSession() {
+        setState(() {
+          _isActive = true;
+          _sessionStart = DateTime.now();
+        });
+        _sessionTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+          if (mounted) setState(() {});
+        });
+      }
+      
+      void _endSession() async {
+        if (_sessionStart == null) return;
+        
+        final user = getCurrentUser();
+        if (user == null) return;
+        
+        final now = DateTime.now();
+        final session = MeditationSession(
+          userId: user.correo,
+          startTime: _sessionStart!,
+          endTime: now,
+          technique: 'breathing',
+          rating: 4,
+        );
+        
+        final key = '${user.correo}_${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+        await _meditationBox.put(key, session.toMap());
+        
+        setState(() {
+          _isActive = false;
+          _sessionStart = null;
+        });
+        _sessionTimer?.cancel();
+      }
+      
+      @override
+      void dispose() {
+        _sessionTimer?.cancel();
+        super.dispose();
+      }
+      
+      @override
+      Widget build(BuildContext context) {
+        return Scaffold(
+          appBar: AppBar(title: const Text('Meditation')),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_isActive && _sessionStart != null)
+                  Text(
+                    'Session: ${DateTime.now().difference(_sessionStart!).inMinutes} min',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _isActive ? _endSession : _startSession,
+                  child: Text(_isActive ? 'End Session' : 'Start Meditation'),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Add to bottom navigation">
+    Modify the `VidaPlusApp` widget (around line 200+) to include your new screen in the bottom navigation.
+
+    Find the `_pages` list and add your screen:
+
+    ```dart
+    final List<Widget> _pages = [
+      const HomeScreen(),
+      const ExerciseScreen(),
+      const HydrationScreen(),
+      const SleepScreen(),
+      const MeditationScreen(), // NEW: Add your screen here
+      const SettingsScreen(),
+    ];
+    ```
+
+    Then add a navigation item:
+
+    ```dart
+    bottomNavigationBar: BottomNavigationBar(
+      currentIndex: _selectedIndex,
+      onTap: (i) => setState(() => _selectedIndex = i),
+      type: BottomNavigationBarType.fixed,
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+        BottomNavigationBarItem(icon: Icon(Icons.directions_run), label: 'Exercise'),
+        BottomNavigationBarItem(icon: Icon(Icons.water_drop), label: 'Hydration'),
+        BottomNavigationBarItem(icon: Icon(Icons.bedtime), label: 'Sleep'),
+        BottomNavigationBarItem(icon: Icon(Icons.self_improvement), label: 'Meditation'), // NEW
+        BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+      ],
+    );
+    ```
+  </Step>
+</Steps>
+
+## Key patterns to follow
+
+### Use composite keys for daily data
+
+Always use the `{userId}_{YYYY-MM-DD}` pattern for daily records:
+
+```dart
+final user = getCurrentUser();
+final today = DateTime.now();
+final key = '${user.correo}_${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+```
+
+This enables O(1) lookups and prevents data collisions between users.
+
+### Access theme settings
+
+Read the current theme from user settings:
+
+```dart
+final user = getCurrentUser();
+if (user == null) return;
+
+final settingsKey = 'settings:${user.correo}';
+final settingsMap = _userSettingsBox.get(settingsKey);
+final settings = settingsMap != null ? UserSettings.fromMap(settingsMap) : null;
+
+final brightness = settings?.brightness ?? 'light';
+final seedColor = settings?.seedColor != null 
+    ? Color(settings!.seedColor!) 
+    : Colors.lime;
+```
+
+### Handle user sessions
+
+Always check if a user is logged in before accessing their data:
+
+```dart
+final user = getCurrentUser();
+if (user == null) {
+  // Redirect to login or show error
+  return;
+}
+```
+
+### Save data asynchronously
+
+Use async/await for all Hive write operations:
+
+```dart
+await _meditationBox.put(key, data);
+await _meditationBox.delete(key);
+```
+
+## Example: mood tracking feature
+
+Here's a complete example of adding a mood tracking feature:
+
+<Accordion title="View complete mood tracker implementation">
+
+```dart
+// 1. Add box to main()
+await Hive.openBox('daily_mood');
+
+// 2. Add getter
+Box get _moodBox => Hive.box('daily_mood');
+
+// 3. Create screen
+class MoodScreen extends StatefulWidget {
+  const MoodScreen({super.key});
+  
+  @override
+  State<MoodScreen> createState() => _MoodScreenState();
+}
+
+class _MoodScreenState extends State<MoodScreen> {
+  int _selectedMood = 3; // 1=very sad, 5=very happy
+  String _note = '';
+  
+  final _moods = ['😢', '😕', '😐', '🙂', '😄'];
+  
+  void _saveMood() async {
+    final user = getCurrentUser();
+    if (user == null) return;
+    
+    final now = DateTime.now();
+    final key = '${user.correo}_${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    
+    await _moodBox.put(key, {
+      'mood': _selectedMood,
+      'note': _note,
+      'timestamp': now.toIso8601String(),
+    });
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mood saved!')),
+      );
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Mood')),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            const Text('How are you feeling today?', 
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: List.generate(5, (i) {
+                final mood = i + 1;
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedMood = mood),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _selectedMood == mood 
+                          ? Theme.of(context).colorScheme.primaryContainer
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(_moods[i], style: const TextStyle(fontSize: 32)),
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 32),
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Add a note (optional)',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+              onChanged: (v) => _note = v,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _saveMood,
+              child: const Text('Save Mood'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+</Accordion>
+
+## Tips for maintaining code quality
+
+<Note>
+  **Keep the single file manageable**: As you add features, consider whether it's time to split `main.dart` into multiple files. The current architecture works well up to about 10,000 lines, but beyond that, consider modularizing into separate files for screens, models, and services.
+</Note>
+
+<Tip>
+  **Test incrementally**: After adding a new screen, test it immediately with `flutter run` before adding more complexity. This makes debugging easier.
+</Tip>
+
+<Warning>
+  **Don't forget to dispose resources**: If your screen uses timers, stream subscriptions, or animation controllers, always dispose them in the `dispose()` method to prevent memory leaks.
+</Warning>
+
+## Related pages
+
+- [Data models](/development/data-models) - Learn about the data structures used in Vitu
+- [Database schema](/development/database) - Understand Hive box organization
+- [Architecture](/development/architecture) - Review the overall app structure

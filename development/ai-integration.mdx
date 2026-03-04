@@ -1,0 +1,724 @@
+---
+title: AI Integration
+description: Google Gemini API integration for food analysis and recipe recommendations
+---
+
+## Overview
+
+Vitu integrates **Google Generative AI (Gemini)** to provide intelligent food analysis and personalized recipe recommendations. The integration is entirely server-side via REST API, requiring no on-device ML models.
+
+<Note>
+  Gemini API key is **hardcoded** in the source code at line 489. This is a security risk and should be replaced with environment variables or secure storage in production.
+</Note>
+
+## Initialization
+
+Gemini model is initialized in `HomeScreen.initState()`:
+
+```dart lib/main.dart:484-527
+@override
+void initState() {
+  super.initState();
+
+  // ⚠️ API key hardcoded - DO NOT commit to public repos
+  const apiKey = 'AIzaSyCEwgwToG9cfPvf2wzNHGOhSeXCLafD1ms';
+
+  // Initialize Gemini model
+  _geminiModel = GenerativeModel(
+    model: 'gemini-2.5-flash', // Vision + language model
+    apiKey: apiKey,
+  );
+
+  // Connectivity check (ping)
+  Future.microtask(() async {
+    try {
+      final ct = await _geminiModel.countTokens([Content.text('test')]);
+      debugPrint('Gemini ping OK: ${ct.totalTokens} tokens');
+    } on GenerativeAIException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Error de conexión con Gemini. Revisa internet o genera nueva clave en `https://aistudio.google.com/app/apikey`',
+          ),
+        ),
+      );
+    } on SocketException catch (e) {
+      debugPrint('Sin internet (ping): $e');
+    }
+  });
+  
+  Future.microtask(_cargarRecetasRecomendadas);
+}
+```
+
+<ParamField path="model" type="string" default="gemini-2.5-flash">
+  Gemini model version. Supports vision + text generation.
+</ParamField>
+
+<ParamField path="apiKey" type="string" required>
+  Google AI Studio API key. **Generate at**: https://aistudio.google.com/app/apikey
+</ParamField>
+
+## Use Cases
+
+### 1. Food Image Analysis
+
+Analyzes photos of meals to extract nutritional information.
+
+#### Workflow
+
+<Steps>
+  <Step title="Image Capture">
+    User selects camera or gallery via `image_picker`
+  </Step>
+  <Step title="Image Validation">
+    Check file size > 0 bytes
+  </Step>
+  <Step title="Prompt Construction">
+    Build structured prompt with user context
+  </Step>
+  <Step title="API Request">
+    Send image + prompt to Gemini
+  </Step>
+  <Step title="Response Parsing">
+    Extract structured data via regex
+  </Step>
+  <Step title="UI Update">
+    Display results in pie chart and nutrient cards
+  </Step>
+</Steps>
+
+#### Implementation
+
+```dart lib/main.dart:629-789
+Future<void> _analizarConGemini(File foto) async {
+  try {
+    final length = await foto.length();
+    if (length == 0) {
+      _showSnack('Imagen vacía o no legible', error: true);
+      return;
+    }
+    
+    // 1. Build prompt with user personalization
+    final prompt = '''
+Analiza esta comida en la foto.
+Identifica el plato principal aproximado.
+Estima valores nutricionales aproximados.
+Responde SOLO en este formato exacto, sin texto adicional:
+Plato: [nombre aproximado]
+Calorías: [número] kcal
+Proteínas: [número] g
+Carbohidratos: [número] g
+Grasas: [número] g
+${buildUserPromptPersonalization()}
+''';
+    
+    // 2. Prepare image data
+    final bytes = await foto.readAsBytes();
+    final mime = foto.path.toLowerCase().endsWith('.png') 
+        ? 'image/png' 
+        : 'image/jpeg';
+    final content = Content.multi([
+      TextPart(prompt), 
+      DataPart(mime, bytes)
+    ]);
+    
+    // 3. Send to Gemini with timeout
+    final resp = await _geminiModel
+        .generateContent([content])
+        .timeout(const Duration(seconds: 20));
+    
+    final text = resp.text ?? '';
+    debugPrint('Gemini raw response:\n$text');
+    
+    // 4. Parse structured response with regex
+    final platoRx = RegExp(r'^Plato:\s*(.+)$', multiLine: true);
+    final kcalRx = RegExp(r'^Calor[ií]as:\s*(\d+)\s*kcal', multiLine: true);
+    final protRx = RegExp(r'^Prote[ií]nas:\s*([\d\.]+)\s*g', multiLine: true);
+    final carbRx = RegExp(r'^Carbohidratos:\s*([\d\.]+)\s*g', multiLine: true);
+    final fatRx = RegExp(r'^Grasas:\s*([\d\.]+)\s*g', multiLine: true);
+    
+    final plato = platoRx.firstMatch(text)?.group(1)?.trim();
+    final kcal = int.tryParse(kcalRx.firstMatch(text)?.group(1) ?? '');
+    final prot = double.tryParse(protRx.firstMatch(text)?.group(1) ?? '');
+    final carb = double.tryParse(carbRx.firstMatch(text)?.group(1) ?? '');
+    final fat = double.tryParse(fatRx.firstMatch(text)?.group(1) ?? '');
+    
+    // 5. Update UI state
+    if (mounted) {
+      setState(() {
+        _plato = plato ?? 'No se pudo detectar';
+        _kcal = kcal ?? 0;
+        _prot = prot ?? 0;
+        _carb = carb ?? 0;
+        _fat = fat ?? 0;
+      });
+    }
+  } on GenerativeAIException catch (e) {
+    _showSnack('Error de IA: ${e.message}', error: true);
+  } on SocketException catch (e) {
+    _showSnack('No hay internet', error: true);
+  } on TimeoutException {
+    _showSnack('Tiempo de espera agotado', error: true);
+  }
+}
+```
+
+#### User Personalization
+
+Prompts include user profile data for tailored analysis:
+
+```dart lib/main.dart:270-278
+String buildUserPromptPersonalization() {
+  final u = getCurrentUser();
+  if (u == null) return '';
+  final g = u.genero.isEmpty ? 'No especificado' : u.genero;
+  return '''
+Datos del usuario: edad ${u.edad} años, peso ${u.peso} kg, altura ${u.altura} cm, género $g. 
+Personaliza las recomendaciones considerando estas características.
+''';
+}
+```
+
+#### Prompt Structure
+
+<Accordion title="Food Analysis Prompt">
+```
+Analiza esta comida en la foto.
+Identifica el plato principal aproximado.
+Estima valores nutricionales aproximados.
+Responde SOLO en este formato exacto, sin texto adicional:
+Plato: [nombre aproximado]
+Calorías: [número] kcal
+Proteínas: [número] g
+Carbohidratos: [número] g
+Grasas: [número] g
+
+Datos del usuario: edad 28 años, peso 70.0 kg, altura 175.0 cm, género masculino. 
+Personaliza las recomendaciones considerando estas características.
+```
+</Accordion>
+
+<Warning>
+  The prompt enforces **strict output formatting** to enable regex parsing. Any deviation from the format causes parsing to fail.
+</Warning>
+
+#### Response Parsing
+
+Gemini's response is parsed with case-insensitive regex:
+
+```dart
+// Example response:
+// Plato: Arroz con pollo
+// Calorías: 520 kcal
+// Proteínas: 35.5 g
+// Carbohidratos: 60.2 g
+// Grasas: 12.8 g
+
+final platoRx = RegExp(
+  r'^Plato:\s*(.+)$',
+  multiLine: true,
+  caseSensitive: false,
+);
+```
+
+<Info>
+  Regex patterns handle Spanish accents: `Calor[ií]as` matches both "Calorías" and "Calorias".
+</Info>
+
+### 2. Recipe Recommendations
+
+Generates personalized healthy recipes based on user profile.
+
+#### Implementation
+
+```dart lib/main.dart:1285-1309
+Future<void> _cargarRecetasRecomendadas() async {
+  if (!mounted) return;
+  setState(() => _cargandoRecetas = true);
+  
+  try {
+    final u = getCurrentUser();
+    final genero = u?.genero ?? 'no especificado';
+    final edad = u?.edad ?? 0;
+    final altura = u?.altura ?? 0.0;
+    final peso = u?.peso ?? 0.0;
+    
+    final prompt = '''
+Sugiere 3 recetas saludables y variadas para hoy en El Salvador, 
+basadas en una dieta balanceada para un usuario de género $genero, 
+$edad años, $altura cm y $peso kg. 
+
+Para cada receta incluye: nombre, tiempo aproximado, dificultad, 
+breve porqué es saludable, lista de ingredientes (solo nombres y cantidades), 
+y estimado nutricional aproximado (kcal, proteínas, carbohidratos, grasas).
+
+Responde SOLO en formato JSON array con claves: 
+nombre, tiempo, dificultad, razonSaludable, ingredientes (array de strings), 
+nutricional (objeto con kcal, proteinas, carbohidratos, grasas).
+''';
+    
+    final res = await _geminiModel.generateContent([Content.text(prompt)]);
+    final text = res.text?.trim() ?? '';
+    final list = _parseRecetas(text);
+    setState(() => _recetasRecomendadas = list);
+  } catch (_) {
+    setState(() => _recetasRecomendadas = []);
+  } finally {
+    if (mounted) setState(() => _cargandoRecetas = false);
+  }
+}
+```
+
+#### JSON Response Parsing
+
+```dart lib/main.dart:1311-1393
+List<_Receta> _parseRecetas(String text) {
+  final out = <_Receta>[];
+  try {
+    dynamic data;
+    try {
+      data = json.decode(text);
+    } catch (_) {
+      // Extract JSON array from markdown code blocks
+      final start = text.indexOf('[');
+      final end = text.lastIndexOf(']');
+      if (start != -1 && end != -1 && end > start) {
+        final jsonStr = text.substring(start, end + 1);
+        data = json.decode(jsonStr);
+      }
+    }
+    
+    if (data is List) {
+      for (final item in data) {
+        if (item is Map) {
+          final nombre = '${item['nombre'] ?? item['name'] ?? ''}'.trim();
+          final tiempo = '${item['tiempo'] ?? item['time'] ?? ''}'.trim();
+          final dif = '${item['dificultad'] ?? item['difficulty'] ?? ''}'.trim();
+          final porque = '${item['razonSaludable'] ?? item['porque'] ?? ''}'.trim();
+          
+          // Parse ingredients
+          final ingredientes = <_Ingrediente>[];
+          if (item['ingredientes'] is List) {
+            for (final it in item['ingredientes']) {
+              final n = '$it'.trim();
+              ingredientes.add(_Ingrediente(n, ''));
+            }
+          }
+          
+          // Parse nutrition
+          _Nutricion? nutr;
+          final nutRaw = item['nutricional'] ?? item['nutrition'];
+          if (nutRaw is Map) {
+            nutr = _Nutricion(
+              kcal: int.tryParse('${nutRaw['kcal'] ?? 0}') ?? 0,
+              proteinas: double.tryParse('${nutRaw['proteinas'] ?? 0}') ?? 0.0,
+              carbohidratos: double.tryParse('${nutRaw['carbohidratos'] ?? 0}') ?? 0.0,
+              grasas: double.tryParse('${nutRaw['grasas'] ?? 0}') ?? 0.0,
+            );
+          }
+          
+          out.add(_Receta(
+            nombre: nombre,
+            tiempo: tiempo.isEmpty ? '30 min' : tiempo,
+            dificultad: dif.isEmpty ? 'Fácil' : dif,
+            porque: porque.isEmpty ? null : porque,
+            ingredientes: ingredientes,
+            nutricion: nutr,
+          ));
+        }
+      }
+    }
+  } catch (_) {}
+  return out;
+}
+```
+
+<Accordion title="Expected JSON Response">
+```json
+[
+  {
+    "nombre": "Ensalada de quinoa con aguacate",
+    "tiempo": "25 min",
+    "dificultad": "Fácil",
+    "razonSaludable": "Rica en proteínas vegetales y grasas saludables",
+    "ingredientes": [
+      "1 taza de quinoa cocida",
+      "1 aguacate mediano",
+      "100g de tomate cherry",
+      "50g de espinaca fresca"
+    ],
+    "nutricional": {
+      "kcal": 420,
+      "proteinas": 15.5,
+      "carbohidratos": 45.0,
+      "grasas": 18.5
+    }
+  },
+  // ... 2 more recipes
+]
+```
+</Accordion>
+
+### 3. Recipe Steps Generation
+
+Dynamically generates cooking instructions when user taps "Pasos":
+
+```dart lib/main.dart:1443-1519
+Future<void> _mostrarPasos(_Receta r) async {
+  final u = getCurrentUser();
+  final genero = u?.genero ?? 'no especificado';
+  final edad = u?.edad ?? 0;
+  
+  final prompt = """Genera los pasos detallados de la receta '${r.nombre}' 
+para $genero, $edad años. Incluye 5-8 pasos claros y fáciles.""";
+  
+  String contenido = '';
+  bool loading = true;
+  
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      Future.microtask(() async {
+        try {
+          final res = await _geminiModel.generateContent([
+            Content.text(prompt),
+          ]);
+          final text = res.text?.trim() ?? '';
+          final lines = text
+              .split('\n')
+              .map((l) => l.trim())
+              .where((l) => l.isNotEmpty)
+              .toList();
+          contenido = lines.join('\n');
+        } catch (_) {
+          contenido = 'No se pudieron generar los pasos. Intenta de nuevo.';
+        } finally {
+          loading = false;
+          (context as Element).markNeedsBuild();
+        }
+      });
+      
+      return StatefulBuilder(
+        builder: (context, setSt) {
+          return AlertDialog(
+            title: const Text('Pasos de la receta'),
+            content: loading
+                ? CircularProgressIndicator()
+                : ListView(
+                    children: contenido
+                        .split('\n')
+                        .map((l) => ListTile(
+                              leading: Icon(Icons.checklist_rtl),
+                              title: Text(l),
+                            ))
+                        .toList(),
+                  ),
+          );
+        },
+      );
+    },
+  );
+}
+```
+
+## API Key Management
+
+<Warning>
+  **Current implementation**: API key is hardcoded at line 489.
+  
+  **Risks**:
+  - Exposed in version control
+  - Visible in decompiled APK
+  - Can be rate-limited if abused
+  - No key rotation capability
+</Warning>
+
+### Recommended Solutions
+
+<Tabs>
+  <Tab title="Environment Variables">
+    ```dart
+    // Use flutter_dotenv package
+    import 'package:flutter_dotenv/flutter_dotenv.dart';
+    
+    await dotenv.load(fileName: ".env");
+    final apiKey = dotenv.env['GEMINI_API_KEY']!;
+    ```
+    
+    Add to `.gitignore`:
+    ```
+    .env
+    ```
+  </Tab>
+  <Tab title="Secure Storage">
+    ```dart
+    // Use flutter_secure_storage
+    import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+    
+    final storage = FlutterSecureStorage();
+    final apiKey = await storage.read(key: 'gemini_api_key');
+    ```
+  </Tab>
+  <Tab title="Backend Proxy">
+    ```dart
+    // Route requests through your own server
+    final response = await http.post(
+      Uri.parse('https://yourapi.com/analyze-food'),
+      headers: {'Authorization': 'Bearer $userToken'},
+      body: imageBytes,
+    );
+    ```
+  </Tab>
+</Tabs>
+
+## Error Handling
+
+Comprehensive error handling for network and API failures:
+
+```dart lib/main.dart:733-788
+try {
+  final resp = await _geminiModel
+      .generateContent([content])
+      .timeout(const Duration(seconds: 20));
+  // ... process response
+} on GenerativeAIException catch (e) {
+  final msg = e.message;
+  final modelIssue = msg.toLowerCase().contains('model');
+  final text = modelIssue
+      ? 'Modelo no disponible en esta versión – prueba actualizar paquete'
+      : 'Error de IA: $msg';
+  _showSnack(text, error: true, onRetry: () {
+    if (_photo != null) _analizarConGemini(_photo!);
+  });
+} on SocketException catch (e) {
+  _showSnack('No hay internet', error: true, onRetry: retryFunc);
+} on TimeoutException {
+  _showSnack('Tiempo de espera agotado', error: true, onRetry: retryFunc);
+} catch (e, st) {
+  _showSnack('Error inesperado: $e', error: true);
+}
+```
+
+<ParamField path="GenerativeAIException" type="Exception">
+  API errors (invalid key, quota exceeded, model unavailable)
+</ParamField>
+
+<ParamField path="SocketException" type="Exception">
+  Network connectivity issues
+</ParamField>
+
+<ParamField path="TimeoutException" type="Exception">
+  Request exceeded 20-second timeout
+</ParamField>
+
+### Retry Mechanism
+
+Snackbars include retry actions:
+
+```dart lib/main.dart:614-627
+void _showSnack(String msg, {bool error = false, VoidCallback? onRetry}) {
+  final snack = SnackBar(
+    content: Text(msg),
+    backgroundColor: error ? Colors.red.shade700 : null,
+    action: onRetry != null
+        ? SnackBarAction(
+            label: 'Reintentar',
+            textColor: Colors.white,
+            onPressed: onRetry,
+          )
+        : null,
+  );
+  ScaffoldMessenger.of(context).showSnackBar(snack);
+}
+```
+
+## Performance Optimization
+
+### Image Size Validation
+
+```dart lib/main.dart:631-645
+final length = await foto.length();
+debugPrint('Foto size: $length bytes');
+
+if (length == 0) {
+  _showSnack('Imagen vacía o no legible', error: true);
+  return;
+}
+```
+
+<Info>
+  Images are **not compressed** before upload. For files >2MB, consider using the `image` package to resize/compress.
+</Info>
+
+### Timeout Configuration
+
+```dart
+final resp = await _geminiModel
+    .generateContent([content])
+    .timeout(const Duration(seconds: 20));
+```
+
+20-second timeout prevents UI blocking on slow connections.
+
+### Loading States
+
+UI shows loading indicators during API calls:
+
+```dart lib/main.dart:880-919
+if (_analyzing)
+  AnimatedOpacity(
+    opacity: _analyzing ? 1 : 0,
+    duration: const Duration(milliseconds: 200),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.40),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: widget.seedColor),
+                const SizedBox(height: 12),
+                Text(
+                  'Analizando imagen con IA...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  )
+```
+
+## Data Models
+
+### Recipe Model
+
+```dart lib/main.dart:280-317
+class _Receta {
+  final String nombre;
+  final String tiempo;
+  final String dificultad;
+  final String? imagenUrl;
+  final String? imagenDesc;
+  final String? porque;
+  final List<_Ingrediente> ingredientes;
+  final _Nutricion? nutricion;
+}
+
+class _Ingrediente {
+  final String nombre;
+  final String tienda; // Not used in current implementation
+}
+
+class _Nutricion {
+  final int kcal;
+  final double proteinas;
+  final double carbohidratos;
+  final double grasas;
+}
+```
+
+## API Costs & Quotas
+
+<Warning>
+  Gemini API has **free tier limits**:
+  - 60 requests per minute
+  - 1,500 requests per day
+  - Rate limiting applies per API key
+</Warning>
+
+Typical usage:
+- Food analysis: ~1 request per photo (user-initiated)
+- Recipe generation: 1 request at app start + screen refresh
+- Recipe steps: 1 request per recipe view
+
+**Estimated monthly cost** (at $0.00125/request):
+- 50 active users × 5 photos/day × 30 days = 7,500 requests = **~$9.38/month**
+
+<Info>
+  Monitor usage at: https://console.cloud.google.com/apis/api/generativelanguage.googleapis.com/quotas
+</Info>
+
+## Testing & Debugging
+
+### Debug Logs
+
+```dart
+debugPrint('Gemini raw response:\n$text');
+debugPrint('Foto path: ${foto.path}');
+debugPrint('Foto size: $length bytes');
+```
+
+### Connectivity Ping
+
+App performs a test request on startup:
+
+```dart lib/main.dart:498-525
+Future.microtask(() async {
+  try {
+    final ct = await _geminiModel.countTokens([Content.text('test')]);
+    debugPrint('Gemini ping OK: ${ct.totalTokens} tokens');
+  } on GenerativeAIException catch (e, st) {
+    debugPrint('Gemini ping failed: ${e.message}');
+    debugPrint('Stack trace: $st');
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Error de conexión con Gemini. Revisa internet o genera nueva clave',
+            ),
+          ),
+        );
+      });
+    }
+  }
+});
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Secure API Keys">
+    Never commit API keys to version control. Use environment variables or backend proxy.
+  </Step>
+  <Step title="Handle Failures Gracefully">
+    Always catch `GenerativeAIException`, `SocketException`, and `TimeoutException`.
+  </Step>
+  <Step title="Validate Inputs">
+    Check image file size before uploading to avoid wasted API calls.
+  </Step>
+  <Step title="Structure Prompts Clearly">
+    Enforce strict output formats (JSON or line-based) to enable reliable parsing.
+  </Step>
+  <Step title="Show Loading States">
+    Use `CircularProgressIndicator` and disable UI during API calls.
+  </Step>
+  <Step title="Enable Retries">
+    Provide "Reintentar" buttons in error snackbars.
+  </Step>
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Architecture Overview" icon="sitemap" href="/development/architecture">
+    Understand the single-file app structure
+  </Card>
+  <Card title="Database Schema" icon="database" href="/development/database">
+    Learn about Hive data storage patterns
+  </Card>
+</CardGroup>

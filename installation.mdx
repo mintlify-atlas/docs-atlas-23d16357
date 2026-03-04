@@ -1,0 +1,169 @@
+---
+title: Installation
+description: Install and set up Vitu on your development environment
+---
+
+## Prerequisites
+
+Before installing Vitu, ensure you have the following installed:
+
+<Steps>
+  <Step title="Install Flutter SDK">
+    Download and install Flutter SDK from [flutter.dev](https://flutter.dev/docs/get-started/install)
+    
+    Vitu requires Flutter SDK with Dart **^3.10.8**
+    
+    Verify your installation:
+    ```bash
+    flutter --version
+    flutter doctor
+    ```
+  </Step>
+
+  <Step title="Set up platform tools">
+    Install the required tools for your target platform:
+    
+    **For Android:**
+    - Android Studio with Android SDK
+    - Android SDK Platform-Tools
+    - Android Emulator or physical device
+    
+    **For iOS (macOS only):**
+    - Xcode 12.0 or later
+    - CocoaPods
+    - iOS Simulator or physical device
+    
+    **For Desktop (optional):**
+    - Windows: Visual Studio 2022 with C++ tools
+    - macOS: Xcode command line tools
+    - Linux: clang, cmake, ninja-build, libgtk-3-dev
+  </Step>
+
+  <Step title="Verify platform setup">
+    Run Flutter doctor to ensure all requirements are met:
+    ```bash
+    flutter doctor -v
+    ```
+    
+    Fix any issues reported before proceeding.
+  </Step>
+</Steps>
+
+## Install Vitu
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone the Vitu repository from GitHub:
+    ```bash
+    git clone https://github.com/<your-username>/VidaSaludable.git
+    cd VidaSaludable
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    Install all Flutter package dependencies:
+    ```bash
+    flutter pub get
+    ```
+    
+    This will install the following packages:
+    - `hive` and `hive_flutter` - Local NoSQL database
+    - `google_generative_ai` - Gemini AI integration
+    - `image_picker` - Camera and gallery access
+    - `geolocator` - Location services
+    - `sensors_plus` - Device sensors (accelerometer)
+    - `fl_chart` - Data visualization
+    - `path_provider` - File system paths
+    - `shared_preferences` - Simple key-value storage
+    - `screen_state` - Screen state detection
+  </Step>
+
+  <Step title="Configure platform permissions">
+    The app requires specific permissions to function properly. These are already configured in the source files.
+    
+    **Android permissions** (in `android/app/src/main/AndroidManifest.xml`):
+    ```xml
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    ```
+    
+    **iOS permissions** (in `ios/Runner/Info.plist`):
+    ```xml
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Necesitamos ubicación para contar pasos y detectar actividad</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>Necesitamos ubicación para contar pasos y detectar actividad</string>
+    ```
+    
+    **Camera permissions** are handled automatically by the `image_picker` plugin.
+  </Step>
+
+  <Step title="Set up Gemini API key">
+    <Warning>
+      **Never commit your API key to version control.** Use environment variables or a local configuration file that is ignored by Git.
+    </Warning>
+    
+    1. Get a Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+    2. See the [Configuration](/configuration) page for secure setup options
+    
+    For now, you can temporarily add it directly in `lib/main.dart:489` (not recommended for production):
+    ```dart
+    const apiKey = 'YOUR_API_KEY_HERE';
+    ```
+  </Step>
+
+  <Step title="Verify installation">
+    Test that everything is set up correctly:
+    ```bash
+    flutter analyze
+    ```
+    
+    This should complete without errors.
+  </Step>
+</Steps>
+
+## Platform-Specific Setup
+
+### Android
+
+Vitu uses Android Gradle Plugin 8+ and requires:
+- Minimum SDK: API 21 (Android 5.0)
+- Target SDK: Latest stable
+
+No additional configuration is required beyond the standard Flutter setup.
+
+### iOS
+
+For iOS development:
+
+<Steps>
+  <Step title="Install CocoaPods dependencies">
+    ```bash
+    cd ios
+    pod install
+    cd ..
+    ```
+  </Step>
+
+  <Step title="Configure code signing">
+    Open `ios/Runner.xcworkspace` in Xcode and configure your development team in the Signing & Capabilities tab.
+  </Step>
+</Steps>
+
+### Desktop Platforms
+
+Vitu supports Windows, macOS, and Linux. Desktop builds work out of the box once Flutter desktop is enabled:
+
+```bash
+flutter config --enable-windows-desktop
+flutter config --enable-macos-desktop
+flutter config --enable-linux-desktop
+```
+
+<Note>
+  Some features like step counting and location tracking may have limited functionality on desktop platforms.
+</Note>
+
+## Next Steps
+
+Once installation is complete, proceed to the [Quickstart](/quickstart) guide to run Vitu for the first time.

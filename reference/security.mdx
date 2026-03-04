@@ -1,0 +1,227 @@
+---
+title: Security & Best Practices
+description: Security considerations and best practices for deploying Vitu in production
+---
+
+## Overview
+
+Vitu handles sensitive personal health data and requires careful attention to security practices. This guide covers API key security, password storage, local data protection, platform permissions, and privacy considerations.
+
+## API Key Security
+
+### Gemini API Key
+
+Vitu uses Google Generative AI (Gemini) for food image analysis and recipe recommendations. **Never commit your API key to version control.**
+
+<Warning>
+  The API key in `main.dart:489` is exposed in the source code. This is acceptable for development only and must be changed for production.
+</Warning>
+
+### Best Practices
+
+1. **Use Environment Variables**
+   ```bash
+   export GEMINI_API_KEY="your-api-key-here"
+   ```
+
+2. **Create a Local Configuration File**
+   - Create a `.env` file in your project root
+   - Add it to `.gitignore`
+   - Load it using `flutter_dotenv` package
+
+3. **Generate Your Own Key**
+   - Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
+   - Generate a new API key
+   - Configure usage limits and restrictions
+
+### Implementation Example
+
+```dart
+// Instead of hardcoding:
+const apiKey = 'AIzaSy...';
+
+// Use environment variables:
+final apiKey = const String.fromEnvironment('GEMINI_API_KEY');
+
+// Or load from .env:
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+final apiKey = dotenv.env['GEMINI_API_KEY'];
+```
+
+## Password Storage
+
+### Current Implementation
+
+Vitu currently stores passwords in **plain text** in the local Hive database (see `main.dart:64`, `main.dart:158`).
+
+```dart
+// Current implementation (main.dart:155-159)
+bool verifyLogin(String correo, String contrasena) {
+  final u = getUserByEmail(correo.trim().toLowerCase());
+  if (u == null) return false;
+  return u.contrasena == contrasena; // Plain text comparison
+}
+```
+
+<Warning>
+  Plain text password storage is acceptable for local-only development but is **not secure for production**.
+</Warning>
+
+### Future: Hashed Passwords
+
+For production deployment, implement password hashing:
+
+1. **Use bcrypt or argon2**
+   ```yaml
+   dependencies:
+     bcrypt: ^1.1.3
+     # or
+     argon2: ^2.0.0
+   ```
+
+2. **Hash on Registration**
+   ```dart
+   import 'package:bcrypt/bcrypt.dart';
+   
+   final hashedPassword = BCrypt.hashpw(plainPassword, BCrypt.gensalt());
+   ```
+
+3. **Verify on Login**
+   ```dart
+   final isValid = BCrypt.checkpw(inputPassword, storedHash);
+   ```
+
+## Local Data Security
+
+### Hive Database
+
+Vitu uses Hive for 100% local NoSQL storage. All user data is stored unencrypted on the device.
+
+#### Stored Data
+
+- **Users box**: Profile data (name, email, password, physical attributes)
+- **User settings**: UI preferences, hydration goals
+- **Daily exercise**: Step counts and activity data
+- **Hydration logs**: Water consumption entries
+- **Daily hydration summary**: Daily totals and percentages
+- **Daily sleep**: Sleep duration and quality ratings
+
+### Encryption Options
+
+For sensitive health data, enable Hive encryption:
+
+```dart
+import 'package:hive/hive.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+// Generate and store encryption key securely
+final secureStorage = const FlutterSecureStorage();
+var encryptionKey = await secureStorage.read(key: 'hive_key');
+
+if (encryptionKey == null) {
+  final key = Hive.generateSecureKey();
+  await secureStorage.write(key: 'hive_key', value: base64Url.encode(key));
+}
+
+final keyBytes = base64Url.decode(encryptionKey);
+
+// Open encrypted box
+await Hive.openBox('users', encryptionCipher: HiveAesCipher(keyBytes));
+```
+
+## Platform Permissions
+
+Vitu requires several platform permissions for full functionality:
+
+### Android Permissions
+
+Declared in `android/app/src/main/AndroidManifest.xml`:
+
+- **Location** (`ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`): Exercise tracking and speed detection
+- **Camera** (`CAMERA`): Food photo capture
+- **Activity Recognition** (`ACTIVITY_RECOGNITION`): Step counting
+- **Internet** (`INTERNET`): Gemini API calls
+- **Storage**: Photo saving
+
+### iOS Permissions
+
+Declared in `ios/Runner/Info.plist`:
+
+- **Location When In Use**: Exercise tracking
+- **Camera**: Food photo capture  
+- **Motion**: Accelerometer for step counting
+- **Photo Library**: Accessing saved images
+
+### Permission Request Flow
+
+```dart
+// Exercise screen requests location permission
+import 'package:geolocator/geolocator.dart';
+
+final permission = await Geolocator.requestPermission();
+if (permission == LocationPermission.denied) {
+  // Handle denied permission
+}
+```
+
+## Privacy Considerations
+
+### Personal Health Data
+
+Vitu collects and processes:
+
+- Physical attributes (age, gender, height, weight)
+- Sleep patterns and duration
+- Exercise activity and step counts
+- Hydration intake
+- Food consumption and nutritional data
+- Photos of meals
+
+### Privacy Best Practices
+
+1. **Informed Consent**
+   - Clearly explain what data is collected
+   - Request permission before accessing sensors
+   - Allow users to opt out of tracking features
+
+2. **Data Minimization**
+   - Only collect data necessary for features
+   - Provide options to delete historical data
+   - Don't share data without explicit consent
+
+3. **Local-First Architecture**
+   - All data stored locally by default
+   - No cloud sync unless user opts in
+   - No third-party analytics by default
+
+4. **Photo Privacy**
+   - Photos stored in app documents directory
+   - Not accessible to other apps
+   - Provide deletion options
+
+## Production Deployment Checklist
+
+Before deploying Vitu to production:
+
+- [ ] Remove or externalize all API keys
+- [ ] Implement password hashing (bcrypt/argon2)
+- [ ] Enable Hive database encryption
+- [ ] Review and minimize platform permissions
+- [ ] Add privacy policy and terms of service
+- [ ] Implement data export functionality
+- [ ] Add data deletion options
+- [ ] Set up API key usage limits
+- [ ] Test permission request flows
+- [ ] Implement secure key storage (flutter_secure_storage)
+- [ ] Add error handling for API failures
+- [ ] Review Gemini API costs and quotas
+- [ ] Implement rate limiting for API calls
+- [ ] Add user consent dialogs
+- [ ] Test on physical devices (not just emulators)
+
+## Additional Resources
+
+- [Google AI Studio - API Keys](https://aistudio.google.com/app/apikey)
+- [Hive Encryption Documentation](https://docs.hivedb.dev/#/advanced/encrypted_box)
+- [Flutter Security Best Practices](https://flutter.dev/docs/deployment/security)
+- [OWASP Mobile Security](https://owasp.org/www-project-mobile-security/)

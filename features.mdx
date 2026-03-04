@@ -1,0 +1,245 @@
+---
+title: Features
+description: Explore all the wellness tracking features Vitu offers across nutrition, exercise, hydration, and sleep
+---
+
+## Four pillars of wellness
+
+Vitu organizes your health journey around four essential pillars, each designed to help you build sustainable healthy habits.
+
+<CardGroup cols={2}>
+  <Card title="Nutrition" icon="utensils" color="#80CBC4">
+    AI-powered food analysis with instant nutritional insights and personalized recipe recommendations
+  </Card>
+  <Card title="Exercise" icon="person-running" color="#80CBC4">
+    Automatic step counting and activity detection with intelligent vehicle filtering
+  </Card>
+  <Card title="Hydration" icon="droplet" color="#80CBC4">
+    Simple water intake tracking with dynamic daily goals and weekly progress visualization
+  </Card>
+  <Card title="Sleep" icon="moon" color="#80CBC4">
+    Automatic sleep detection and quality tracking with weekly insights
+  </Card>
+</CardGroup>
+
+---
+
+## Nutrition
+
+### AI-powered food analysis
+
+Take control of your nutrition with intelligent food recognition powered by Google Gemini AI. Simply capture a photo of your meal to get instant nutritional analysis.
+
+**How it works:**
+
+1. **Capture your meal** - Choose between camera or gallery to select a food photo
+2. **AI analysis** - Gemini identifies the dish and estimates nutritional content
+3. **View insights** - See calories, proteins, carbohydrates, and fats in an interactive pie chart
+4. **Review history** - Access your last 8 food photos for quick re-analysis
+
+<Note>
+  The AI provides approximate nutritional estimates based on visual analysis. Results are personalized based on your profile (age, weight, height, gender).
+</Note>
+
+**Nutritional breakdown:**
+
+- **Calories** - Total energy content in kcal
+- **Proteins** - Essential for muscle building and repair
+- **Carbohydrates** - Your body's primary energy source
+- **Fats** - Important for hormone production and nutrient absorption
+
+### Personalized recipe recommendations
+
+Receive daily recipe suggestions tailored to your dietary needs and preferences.
+
+**What you get:**
+
+- **3 daily recipes** - Varied, balanced meal ideas generated fresh each day
+- **Time estimates** - Know how long each recipe takes to prepare
+- **Difficulty ratings** - Choose recipes that match your cooking skills
+- **Health rationale** - Understand why each recipe is recommended for you
+- **Complete ingredients** - Full shopping list for each recipe
+- **Nutritional estimates** - Calories and macros for every recipe
+
+<Tip>
+  Recipes are personalized based on your age, weight, height, and gender to ensure they align with your nutritional needs.
+</Tip>
+
+---
+
+## Exercise
+
+### Smart step tracking
+
+Automatically count your steps throughout the day with intelligent activity detection that distinguishes between walking, running, and vehicle movement.
+
+**Smart features:**
+
+- **Automatic counting** - No need to manually start or stop tracking
+- **Activity detection** - Recognizes walking vs. running patterns
+- **Vehicle filtering** - Stops counting when you're traveling faster than 15 km/h
+- **Daily persistence** - Your step count is saved and persists throughout the day
+
+**How it detects movement:**
+
+- Uses your device's **accelerometer** to measure movement patterns
+- Combines **GPS data** to calculate speed and filter out vehicle travel
+- Applies activity-specific thresholds to distinguish walking from running
+- Buffers step data and saves periodically to preserve battery life
+
+<Info>
+  Exercise data is stored locally using the pattern `userId_YYYY-MM-DD` in the daily_exercise database, ensuring your activity history is private and accessible offline.
+</Info>
+
+---
+
+## Hydration
+
+### Simple water intake tracking
+
+Stay hydrated with effortless water consumption tracking and visual progress monitoring.
+
+**Quick-add buttons:**
+
+- **+100 ml** - Small sips throughout the day
+- **+250 ml** - Standard glass of water
+- **+500 ml** - Large water bottle
+
+**Smart daily goals:**
+
+Your hydration target is automatically calculated based on:
+
+- **Weight** - Approximately 35 ml per kg of body weight
+- **Age** - Adjusted for children (under 14 years) and seniors (65+ years)
+- **Gender** - Males receive an additional 200 ml recommendation
+- **Safety limits** - Goals are clamped between 1,200-4,500 ml for safety
+
+<Note>
+  You can customize your daily hydration goal in Settings if the automatic calculation doesn't fit your needs.
+</Note>
+
+**Progress visualization:**
+
+- **Circular progress** - Real-time percentage of daily goal completed
+- **Weekly chart** - Track hydration consistency over the past 7 days
+- **Daily reset** - Progress starts fresh at 0% each morning
+- **Total tracking** - See exactly how many ml you've consumed
+
+**Data storage:**
+
+- Individual log entries stored in `hydration_logs`
+- Daily summaries in `daily_hydration_summary`
+- All entries timestamped for detailed analysis
+
+---
+
+## Sleep
+
+### Automatic sleep detection
+
+Let Vitu track your sleep automatically without any manual input. Sleep detection works intelligently in the background.
+
+**How automatic detection works:**
+
+1. **Time window** - Only detects sleep between 7:00 PM and 7:00 AM
+2. **Screen state** - Monitors when your device screen turns off
+3. **Grace period** - 10-minute margin to avoid counting short screen-off periods
+4. **Duration calculation** - Measures total time from sleep start to wake
+5. **Quality assignment** - Automatically rates sleep quality based on duration
+
+**Sleep quality ratings:**
+
+- **Less than 6 hours** - 2 stars (insufficient sleep)
+- **6-8 hours** - 4 stars (good sleep)
+- **More than 8 hours** - 5 stars (excellent sleep)
+
+<Tip>
+  You can manually edit sleep quality ratings if the automatic assessment doesn't match how you feel.
+</Tip>
+
+**Sleep insights:**
+
+- **Weekly chart** - Visualize your sleep duration over the past 7 days
+- **Sleep history** - Review individual nights with start time, end time, and duration
+- **Quality tracking** - Monitor how well you're sleeping over time
+- **Duration summaries** - See total hours slept each night
+
+**Technical implementation:**
+
+- Uses Flutter's `WidgetsBindingObserver` to detect app lifecycle changes
+- Monitors `paused` (screen off) and `resumed` (screen on) states
+- Clips sleep segments to valid time windows (only counts time within 7pm-7am)
+- Consolidates multiple wake/sleep cycles into single night summaries
+- Stores data in `daily_sleep` with format `userId_YYYY-MM-DD`
+
+---
+
+## Settings and customization
+
+### Personalize your experience
+
+Make Vitu truly yours with extensive customization options.
+
+**Appearance settings:**
+
+- **Theme** - Switch between light and dark mode
+- **Seed color** - Choose your preferred accent color throughout the app
+- **Font family** - Select from multiple typography options (default, serif, and more)
+
+**Personal data:**
+
+- Update your name, age, height, weight, and gender
+- Modify your email address
+- Change your password securely
+
+**Account management:**
+
+- **Log out** - Sign out and return to login screen
+- All settings are stored locally in `user_settings` database
+- Preferences are tied to your user account
+
+<Info>
+  Custom hydration goals can be set in Settings if you want to override the automatic calculation based on weight and age.
+</Info>
+
+---
+
+## Privacy and data storage
+
+### Your data stays on your device
+
+Vitu is built with privacy as a core principle. All your health data is stored locally using Hive NoSQL database.
+
+**Local storage boxes:**
+
+- `users` - Profile data (name, email, physical stats)
+- `user_settings` - Theme preferences and custom goals
+- `daily_exercise` - Step counts and activity data
+- `hydration_logs` - Individual water intake entries
+- `daily_hydration_summary` - Daily totals and percentages
+- `daily_sleep` - Sleep sessions with quality ratings
+
+**Data organization:**
+
+- Most entries use composite keys: `userId_YYYY-MM-DD`
+- This pattern allows easy daily data retrieval
+- All data is tied to your user account
+- No external servers or cloud sync
+
+<Note>
+  The only external service Vitu uses is Google Gemini AI for food analysis and recipe recommendations. Images are sent to Gemini for processing but are not stored by Google.
+</Note>
+
+---
+
+## Cross-platform availability
+
+Vitu is built with Flutter, providing native performance across all major platforms:
+
+- Android
+- iOS
+- Windows
+- Linux
+- macOS
+
+Enjoy the same beautiful Material 3 interface and seamless experience regardless of which device you use.

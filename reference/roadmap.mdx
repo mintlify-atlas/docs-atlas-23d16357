@@ -1,0 +1,253 @@
+---
+title: Roadmap
+description: Planned features and future enhancements for Vitu
+---
+
+## Overview
+
+This roadmap outlines planned improvements and future enhancements for Vitu across all four wellness pillars: Sleep, Hydration, Exercise, and Nutrition AI.
+
+## Sleep Enhancements
+
+<Card title="Better Screen State Detection" icon="moon">
+  **Current Implementation**
+  
+  Vitu currently uses `WidgetsBindingObserver` to detect when the app enters paused state between 19:00-07:00, with a 10-minute margin. See `main.dart:131-139`.
+
+  **Planned Improvements**
+  - Integrate dedicated `screen_state` plugin for more accurate background detection
+  - Support for custom sleep window configuration
+  - Better handling of edge cases (midnight crossover, naps)
+  - Improved consolidation logic for interrupted sleep segments
+</Card>
+
+### Additional Sleep Features
+
+- Sleep quality factors (environment, activity correlation)
+- Sleep goal setting and tracking
+- Weekly/monthly sleep analytics
+- Smart wake-up suggestions based on sleep cycles
+- Integration with wearable devices
+
+## Hydration Improvements
+
+<CardGroup cols={2}>
+  <Card title="Push Reminders" icon="bell">
+    **Smart Notifications**
+    
+    - Customizable reminder intervals
+    - Time-based reminders (e.g., every 2 hours)
+    - Progress-based alerts (e.g., 50% goal reached)
+    - Quiet hours configuration
+    - Reminder snooze functionality
+  </Card>
+
+  <Card title="Adaptive Goals" icon="chart-line">
+    **Dynamic Goal Adjustment**
+    
+    Current goal: `~35 ml/kg` body weight (see `main.dart:202-209`)
+    
+    Future factors:
+    - Weather/temperature integration
+    - Exercise intensity and duration
+    - Time of day patterns
+    - Seasonal adjustments
+    - User feedback and preferences
+  </Card>
+</CardGroup>
+
+### Additional Hydration Features
+
+- Custom container sizes
+- Beverage type tracking (water, tea, coffee)
+- Caffeine tracking and limits
+- Hydration streaks and achievements
+- Export hydration history
+
+## Exercise Enhancements
+
+<Card title="Advanced Metrics" icon="running">
+  **Current Implementation**
+  
+  Vitu tracks steps using accelerometer (`sensors_plus`) and filters vehicle movement using GPS speed detection (>15 km/h threshold).
+
+  **Planned Metrics**
+  - **Distance Tracking**: Calculate distance from steps and GPS
+  - **Calorie Estimation**: Based on weight, activity type, and intensity
+  - **Activity Duration**: Time spent walking, running, or stationary
+  - **Pace Analysis**: Average speed and pace per kilometer
+  - **Elevation Gain**: Using altitude data from GPS
+</Card>
+
+### Health Platform Integration
+
+<CardGroup cols={2}>
+  <Card title="Apple Health" icon="apple">
+    Sync exercise data with Apple Health:
+    - Read historical step counts
+    - Write Vitu activity data
+    - Share workouts and calories
+    - Bi-directional sync
+  </Card>
+
+  <Card title="Google Fit" icon="android">
+    Sync exercise data with Google Fit:
+    - Import step count history
+    - Export Vitu activity sessions
+    - Sync heart rate data
+    - Activity recognition sync
+  </Card>
+</CardGroup>
+
+### Additional Exercise Features
+
+- Manual workout logging
+- Activity type selection (walking, running, cycling)
+- GPS route tracking and maps
+- Personal records and achievements
+- Weekly/monthly activity reports
+- Exercise goals and challenges
+
+## AI & Nutrition Enhancements
+
+<Card title="Enhanced Nutrition Analysis" icon="brain">
+  **Current Implementation**
+  
+  Vitu uses Gemini (`gemini-2.5-flash`) to analyze food photos and extract:
+  - Dish name
+  - Calories (kcal)
+  - Macronutrients (protein, carbs, fat)
+  - Recipe recommendations
+
+  **Planned Improvements**
+  - **Micronutrient Tracking**: Vitamins, minerals, fiber
+  - **Ingredient Detection**: Individual food items in complex dishes
+  - **Portion Size Estimation**: More accurate calorie counts
+  - **Meal Timing Analysis**: Breakfast, lunch, dinner patterns
+  - **Allergen Detection**: Identify common allergens
+  - **Dietary Preference Filtering**: Vegetarian, vegan, gluten-free
+</Card>
+
+### Personalized Meal Planning
+
+<CardGroup cols={2}>
+  <Card title="Custom Meal Plans" icon="calendar">
+    - Weekly meal planning
+    - Macro-balanced suggestions
+    - Based on fitness goals (weight loss, muscle gain)
+    - Shopping list generation
+    - Recipe scaling for servings
+  </Card>
+
+  <Card title="Nutrition Goals" icon="target">
+    - Custom calorie targets
+    - Macro ratio preferences
+    - Meal timing recommendations
+    - Progress tracking
+    - Nutritional deficiency alerts
+  </Card>
+</CardGroup>
+
+### Additional AI Features
+
+- Multi-language recipe support
+- Voice-based food logging
+- Barcode scanning for packaged foods
+- Restaurant menu analysis
+- Meal photo history and search
+- Nutrition trends and insights
+
+## Infrastructure & Quality
+
+<Card title="Testing & Reliability" icon="vial">
+  **Unit Tests**
+  - Data model validation
+  - Hive operations
+  - Calculation logic (hydration goals, calories, etc.)
+  - Date/time utilities
+
+  **Integration Tests**
+  - User authentication flow
+  - Data persistence across sessions
+  - API integration (Gemini)
+  - Sensor integration (accelerometer, GPS)
+
+  **Widget Tests**
+  - UI component rendering
+  - User interaction flows
+  - Theme and appearance changes
+  - Form validation
+</Card>
+
+### Cloud Sync & Backup
+
+<CardGroup cols={2}>
+  <Card title="Cloud Synchronization" icon="cloud">
+    **Planned Features**
+    - Optional cloud backup
+    - Multi-device sync
+    - Firebase/Supabase integration
+    - Conflict resolution
+    - Selective sync (choose data types)
+  </Card>
+
+  <Card title="Data Backup" icon="database">
+    **Backup Options**
+    - Local backup to device storage
+    - Export to JSON/CSV
+    - Encrypted cloud backup
+    - Scheduled automatic backups
+    - Restore from backup
+  </Card>
+</CardGroup>
+
+### Additional Infrastructure
+
+- Crash reporting and analytics
+- Performance monitoring
+- A/B testing framework
+- Internationalization (i18n)
+- Accessibility improvements
+- Offline-first architecture
+- Data migration tools
+
+## Release Timeline
+
+<Note>
+  The following timeline is tentative and subject to change based on community feedback and development priorities.
+</Note>
+
+### Q2 2026
+- Basic push notifications for hydration
+- Exercise distance and calorie tracking
+- Unit and widget test coverage
+
+### Q3 2026
+- Apple Health and Google Fit integration
+- Enhanced nutrition analysis with micronutrients
+- Cloud backup (optional)
+
+### Q4 2026
+- Personalized meal planning
+- Advanced sleep analytics
+- Multi-language support
+
+### 2027 and Beyond
+- Wearable device integration
+- Social features and challenges
+- AI-powered health coaching
+- Medical provider integrations
+
+## Contributing
+
+Want to help build these features? Contributions are welcome!
+
+- Check the [GitHub repository](https://github.com/<your-username>/VidaSaludable) for open issues
+- Submit feature requests and bug reports
+- Join the community discussions
+- Share your ideas for new wellness features
+
+---
+
+**Last Updated**: March 2026  
+**Vitu Version**: 1.0.0

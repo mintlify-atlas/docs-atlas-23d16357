@@ -1,80 +1,319 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get Vitu up and running in minutes
 ---
 
-## Get started in three steps
+## Get Started
 
-Get your documentation site running locally and make your first customization.
+This guide will take you from a fresh clone to a running Vitu app with all features working.
 
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+<Steps>
+  <Step title="Complete installation">
+    If you haven't already, complete the [Installation](/installation) guide first.
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    Ensure you've:
+    - ✅ Installed Flutter SDK ^3.10.8
+    - ✅ Cloned the repository
+    - ✅ Run `flutter pub get`
+    - ✅ Obtained a Gemini API key
+  </Step>
+
+  <Step title="Configure your Gemini API key">
+    <Warning>
+      The Gemini API key is **required** for the food analysis feature to work. Without it, you cannot analyze food images or get recipe recommendations.
+    </Warning>
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+    Open `lib/main.dart` and locate line 489:
+    ```dart
+    const apiKey = 'AIzaSyCEwgwToG9cfPvf2wzNHGOhSeXCLafD1ms';
+    ```
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    Replace this with your own API key from [Google AI Studio](https://aistudio.google.com/app/apikey):
+    ```dart
+    const apiKey = 'YOUR_GEMINI_API_KEY_HERE';
+    ```
+    
+    <Note>
+      For production apps, use environment variables instead. See [Configuration](/configuration) for secure practices.
+    </Note>
+  </Step>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+  <Step title="Choose your device">
+    Select a device to run on:
+    
+    **View available devices:**
+    ```bash
+    flutter devices
+    ```
+    
+    **Options:**
+    - Android emulator/device
+    - iOS simulator/device (macOS only)
+    - Chrome (for testing, limited sensor support)
+    - Windows/macOS/Linux desktop
+  </Step>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+  <Step title="Run the app">
+    Launch Vitu:
+    ```bash
+    flutter run
+    ```
+    
+    Or for a specific device:
+    ```bash
+    flutter run -d <device-id>
+    ```
+    
+    The app will compile and launch. First build may take 2-5 minutes.
+  </Step>
 
-### Step 3: Go live
+  <Step title="Wait for the splash screen">
+    The app opens with an animated splash screen showing the Vitu logo with scale and fade animations.
+    
+    After the animation completes, you'll be redirected to the login screen (first run) or the main app (if you've logged in before).
+  </Step>
+</Steps>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+## First Run Experience
 
-## Next steps
+<Steps>
+  <Step title="Create your account">
+    On the registration screen, enter:
+    - **Name** (nombre)
+    - **Last name** (apellido)
+    - **Gender** (género)
+    - **Age** (edad)
+    - **Height** in cm (altura)
+    - **Weight** in kg (peso)
+    - **Email** (correo)
+    - **Password** (contraseña)
+    
+    <Note>
+      All data is stored **locally** using Hive (NoSQL). No data is sent to external servers except for Gemini AI analysis.
+    </Note>
+    
+    Tap the register button to create your account.
+  </Step>
 
-Now that you have your docs running, explore these key features:
+  <Step title="Log in">
+    After registration, or on subsequent launches, log in with:
+    - Your email
+    - Your password
+    
+    The app validates credentials against the local Hive database and saves your session.
+  </Step>
 
-<CardGroup cols={2}>
+  <Step title="Grant permissions">
+    On first access to certain features, you'll be prompted for permissions:
+    
+    **Location** - Required for:
+    - Step counting
+    - Activity detection (walking vs. vehicle)
+    
+    **Camera** - Required for:
+    - Taking photos of food
+    
+    **Photo Library** - Required for:
+    - Selecting existing food images
+    
+    Grant these permissions to unlock all features.
+  </Step>
+</Steps>
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+## Try Each Feature
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+### Home - Food Analysis
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+<Steps>
+  <Step title="Navigate to Home">
+    The bottom navigation bar has 5 tabs. Home (house icon) is the first tab.
+  </Step>
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+  <Step title="Analyze food">
+    1. Tap the **"Tomar Foto"** button
+    2. Choose **Camera** or **Gallery** from the bottom sheet
+    3. Select or capture a photo of food
+    4. Wait for Gemini AI analysis (usually 5-10 seconds)
+    
+    The app will display:
+    - Detected dish name
+    - Nutritional breakdown (calories, protein, carbs, fats)
+    - Interactive pie chart of macronutrients
+  </Step>
 
-</CardGroup>
+  <Step title="View recipe recommendations">
+    Scroll down to see 3 AI-generated healthy recipes personalized to your profile (age, weight, height, gender).
+    
+    For each recipe, you can:
+    - View **Ingredients**
+    - View **Preparation steps** (generated on-demand)
+    - View **Nutritional estimate**
+  </Step>
+</Steps>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+### Exercise - Step Tracking
+
+<Steps>
+  <Step title="Navigate to Exercise">
+    Tap the second tab (dumbbell icon).
+  </Step>
+
+  <Step title="Start moving">
+    The app automatically counts steps using:
+    - Device accelerometer (`sensors_plus`)
+    - Location services (`geolocator`)
+    
+    **Smart features:**
+    - Detects walking vs. running by acceleration threshold
+    - Ignores steps when moving >15 km/h (in a vehicle)
+    - Persists daily totals to Hive database
+  </Step>
+
+  <Step title="Monitor activity">
+    View your:
+    - Current step count
+    - Activity type (walking/running/idle)
+    - Daily goal progress
+  </Step>
+</Steps>
+
+### Hydration - Water Tracking
+
+<Steps>
+  <Step title="Navigate to Hydration">
+    Tap the third tab (water drop icon).
+  </Step>
+
+  <Step title="Log water intake">
+    Tap quick-add buttons:
+    - **+100 ml**
+    - **+250 ml**
+    - **+500 ml**
+    
+    Each tap:
+    1. Adds the amount to your daily total
+    2. Updates the circular progress indicator
+    3. Saves to Hive (`hydration_logs` box)
+  </Step>
+
+  <Step title="View progress">
+    The screen shows:
+    - **Circular progress** - Percentage of daily goal
+    - **Weekly chart** - Last 7 days of hydration
+    - **Daily goal** - Calculated from your weight (~35 ml/kg) or custom setting
+    
+    <Note>
+      Progress resets to 0% at the start of each day.
+    </Note>
+  </Step>
+</Steps>
+
+### Sleep - Automatic Tracking
+
+<Steps>
+  <Step title="Navigate to Sleep">
+    Tap the fourth tab (moon icon).
+  </Step>
+
+  <Step title="Understand automatic detection">
+    Sleep is tracked automatically when:
+    - Screen is turned off (app enters paused state)
+    - Time is between **19:00 and 07:00** (with 10-minute margin)
+    
+    The app:
+    - Records sleep start time
+    - Records wake time when screen turns on
+    - Clips duration to the valid window
+    - Assigns quality rating based on hours:
+      - Less than 6h = 2 stars
+      - 6-8h = 4 stars
+      - More than 8h = 5 stars
+  </Step>
+
+  <Step title="View sleep data">
+    The screen displays:
+    - **Weekly chart** - Hours slept each night
+    - **Sleep log** - List of recent nights with quality ratings
+    - **Edit quality** - Tap any night to adjust the rating
+  </Step>
+</Steps>
+
+### Settings - Customization
+
+<Steps>
+  <Step title="Navigate to Settings">
+    Tap the fifth tab (gear icon).
+  </Step>
+
+  <Step title="Customize appearance">
+    Adjust:
+    - **Theme** - Light or Dark mode
+    - **Seed color** - App accent color (affects UI throughout)
+    - **Font family** - Typography (default, serif, etc.)
+  </Step>
+
+  <Step title="Update personal data">
+    Edit your:
+    - Name, age, height, weight, gender
+    - Hydration goal (custom ml per day)
+  </Step>
+
+  <Step title="Manage account">
+    - **Change password**
+    - **Log out** - Returns to login screen
+  </Step>
+</Steps>
+
+## Common Issues
+
+### "Error de conexión con Gemini"
+
+**Problem:** Gemini API cannot connect.
+
+**Solutions:**
+1. Verify your API key is valid
+2. Check internet connection
+3. Ensure the key has Gemini API enabled in Google Cloud Console
+4. Generate a new key at [Google AI Studio](https://aistudio.google.com/app/apikey)
+
+### "No se pudo estimar nutrientes"
+
+**Problem:** Food analysis failed to parse results.
+
+**Solutions:**
+1. Ensure the photo clearly shows food
+2. Try a different image with better lighting
+3. Check that you're using the correct Gemini model (`gemini-2.5-flash` in `lib/main.dart:493`)
+
+### Location permission denied
+
+**Problem:** Step tracking doesn't work.
+
+**Solutions:**
+1. Go to device Settings → Apps → Vitu → Permissions
+2. Grant "Location" permission
+3. On iOS, select "While Using the App"
+
+### Steps not counting
+
+**Problem:** Exercise screen shows 0 steps.
+
+**Solutions:**
+1. Ensure location permission is granted
+2. Move around while holding the device
+3. Check that you're not in a vehicle (>15 km/h)
+4. Restart the app
+
+## Next Steps
+
+- Learn about [Configuration](/configuration) best practices
+- Explore the codebase in `lib/main.dart`
+- Customize the app theme and colors
+- Add new features following the Hive database pattern
+
+## Getting Help
+
+For issues or questions:
+- Review the comprehensive README in the repository
+- Check the source code comments in `lib/main.dart`
+- Submit issues to the GitHub repository
